@@ -1,0 +1,8 @@
+
+env/
+.idea/
+.ruff_cache/
+venv/
+src/story_master.egg-info/
+
+**.pyc
