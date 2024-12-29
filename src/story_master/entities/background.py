@@ -1,7 +1,14 @@
 from pydantic import BaseModel
 from enum import StrEnum
-from story_master.memory.entities.skills import SkillType
-from story_master.memory.entities.perks import PerkType
+from story_master.entities.characteristics import SkillType
+from story_master.entities.items.equipment import EquipmentType, EQUIPMENT
+from story_master.entities.items.items import Item
+from story_master.entities.items.instruments import (
+    InstrumentType,
+    INSTRUMENTS,
+    ARTISANS_TOOLS,
+)
+from story_master.utils.selection import SomeOf
 
 
 class BackgroundType(StrEnum):
@@ -20,32 +27,200 @@ class BackgroundType(StrEnum):
     URCHIN = "Urchin"
 
 
+class FeatureType(StrEnum):
+    SHELTER_OF_THE_FAITHFUL = "Shelter of the Faithful"
+    FALSE_IDENTITY = "False Identity"
+    RUSTIC_HOSPITALITY = "Rustic Hospitality"
+
+
+FEATURES = {
+    FeatureType.SHELTER_OF_THE_FAITHFUL: """
+    You and your companions can expect free healing and care at temples, shrines, and other established places of your faith.
+    You must provide any material components needed for spells.
+    Those who share your faith will support you (but only you) at a modest lifestyle.
+    You might have ties to a specific temple dedicated to your chosen deity or pantheon and have a residence there.
+    While near your temple, you can call upon the priests for assistance, provided it does not endanger them.
+    """,
+    FeatureType.FALSE_IDENTITY: """
+    You have created a second identity that includes documentation, established acquaintances,
+    and disguises that allow you to assume that persona.
+    Additionally, you can forge documents including official papers and personal letters,
+    as long as you have seen an example of the kind of document or the handwriting you are trying to copy.
+    """,
+    FeatureType.RUSTIC_HOSPITALITY: """
+    Since you come from the ranks of the common folk, you fit in among them with ease.
+    You can find a place to hide, rest, or recuperate among other commoners, unless you have shown yourself to be a danger to them.
+    They will shield you from the law or anyone else searching for you, though they will not risk their lives for you.
+    """,
+}
+
+
 class Background(BaseModel):
     name: BackgroundType
+    description: str
     skills: list[SkillType]
-    money: int
-    equipment: list[str]
-    perks: list[PerkType]
+    money: float
+    equipment: list[Item]
+    tool_proficiencies: list[InstrumentType]
+    feature: FeatureType
     base_traits: list[str]
     base_ideals: list[str]
     base_bonds: list[str]
     base_flaws: list[str]
 
 
+class Charlatan(Background):
+    name: BackgroundType = BackgroundType.CHARLATAN
+    description: str = """
+You have always had a way with people.
+You know what makes them tick, you can tease out their hearts' desires after a few minutes of conversation,
+and with a few leading questions you can read them like they were children's books.
+It's a useful talent, and one that you're perfectly willing to use for your advantage.
+You know what people want and you deliver, or rather, you promise to deliver.
+Common sense should steer people away from things that sound too good to be true, 
+but common sense seems to be in short supply when you're around.
+The bottle of pink-colored liquid will surely cure that unseemly rash,
+this ointment—nothing more than a bit of fat with a sprinkle of silver dust—can restore youth and vigor,
+and there's a bridge in the city that just happens to be for sale. These marvels sound implausible, but you make them sound like the real deal
+    """
+    skills: list[SkillType] = [SkillType.DECEPTION, SkillType.SLEIGHT_OF_HAND]
+    tool_proficiencies: list[InstrumentType] = [
+        InstrumentType.DISGUISE_KIT,
+        InstrumentType.FORGERY_KIT,
+    ]
+    money: float = 15
+    equipment: list[Item] = [
+        EQUIPMENT[EquipmentType.FINE_CLOTHES],
+        INSTRUMENTS[InstrumentType.DISGUISE_KIT],
+        EQUIPMENT[EquipmentType.POUCH],
+    ]
+    scams: list[str] = [
+        "I cheat at games of chance.",
+        "I shave coins or forge documents.",
+        "I insinuate myself into people's lives to prey on their weakness and secure their fortunes.",
+        "I put on new identities like clothes.",
+        "I run sleight-of-hand cons on street corners.",
+        "I convince people that worthless junk is worth their hard-earned money.",
+    ]
+    feature: FeatureType = FeatureType.FALSE_IDENTITY
+    base_traits: list[str] = [
+        "I fall in and out of love easily, and am always pursuing someone.",
+        "I have a joke for every occasion, especially occasions where humor is inappropriate.",
+        "Flattery is my preferred trick for getting what I want",
+        "I'm a born gambler who can't resist taking a risk for a potential payoff.",
+        "I lie about almost everything, even when there's no good reason to.",
+        "Sarcasm and insults are my weapons of choice.",
+    ]
+    base_ideals: list[str] = [
+        "Independence. I am a free spirit—no one tells me what to do. (Chaotic)",
+        "Fairness. I never target people who can't afford to lose a few coins. (Lawful)",
+        "Charity. I distribute the money I acquire to the people who really need it. (Good)",
+        "Creativity. I never run the same con twice. (Chaotic)",
+        "Friendship. Material goods come and go. Bonds of friendship last forever. (Good)",
+        "Aspiration. I'm determined to make something of myself. (Any)",
+    ]
+    base_bonds: list[str] = [
+        "I fleeced the wrong person and must work to ensure that this individual never crosses paths with me or those I care about.",
+        "I owe everything to my mentor—a horrible person who's probably rotting in jail somewhere.",
+        "Somewhere out there, I have a child who doesn't know me. I'm making the world better for him or her.",
+        "I come from a noble family, and one day I'll reclaim my lands and title from those who stole them from me.",
+        "A powerful person killed someone I love. Some day soon, I’ll have my revenge",
+    ]
+    base_flaws: list[str] = [
+        "I can't resist a pretty face.",
+        "I'm always in debt. I spend my ill-gotten gains on decadent luxuries faster than I bring them in.",
+        "I'm convinced that no one could ever fool me the way I fool others.",
+        "I'm too greedy for my own good. I can't resist taking a risk if there's money involved.",
+        "I can't resist swindling people who are more powerful than me.",
+        "I hate to admit it and will hate myself for it, but I'll run and preserve my own hide if the going gets tough.",
+    ]
+
+
+class FolkHero(Background):
+    # Page 123
+    name: BackgroundType = BackgroundType.FOLK_HERO
+    description: str = """
+    You come from a humble social rank, but you are destined for so much more.
+    Already the people of your home village regard you as their champion, and your destiny calls you to stand against the tyrants and monsters that threaten the common folk everywhere
+    """
+    skills: list[SkillType] = [SkillType.ANIMAL_HANDLING, SkillType.SURVIVAL]
+    tool_proficiencies: SomeOf = SomeOf(1, ARTISANS_TOOLS)
+    equipment: list[Item | SomeOf] = [
+        SomeOf(1, ARTISANS_TOOLS),
+        EQUIPMENT[EquipmentType.SHOVEL],
+        EQUIPMENT[EquipmentType.IRON_POT],
+        EQUIPMENT[EquipmentType.COMMON_CLOTHES],
+        EQUIPMENT[EquipmentType.POUCH],
+    ]
+    money: float = 10
+    defining_events: list[str] = [
+        "I stood up to a tyrant's agents.",
+        "I saved people during a natural disaster.",
+        "I stood alone against a terrible monster.",
+        "I stole from a corrupt merchant to help the poor.",
+        "I led a militia to fight off an invading army.",
+        "I broke into a tyrant's castle and stole weapons to arm the people.",
+        "I trained the peasantry to use farm implements as weapons against a tyrant's soldiers",
+        "A lord rescinded an unpopular decree after I led a symbolic act of protect against it",
+        "A celestial, fey, or similar creature gave me a blessing or revealed my secret origin.",
+        "Recruited into a lord's army, I rose to leadership and was commended for my heroism.",
+    ]
+    feature: FeatureType = FeatureType.RUSTIC_HOSPITALITY
+    base_traits: list[str] = [
+        "I judge people by their actions, not their words.",
+        "If someone is in trouble, I'm always ready to lend help.",
+        "When I set my mind to something, I follow through no matter what gets in my way.",
+        "I have a strong sense of fair play and always try to find the most equitable solution to arguments.",
+        "I'm confident in my own abilities and do what I can to instill confidence in others.",
+        "Thinking is for other people. I prefer action.",
+        "I misuse long words in an attempt to sound smarter.",
+        "I get bored easily. When am I going to get on with my destiny?",
+    ]
+    base_ideals: list[str] = [
+        "Respect. People deserve to be treated with dignity and respect. (Good)",
+        "Fairness. No one should get preferential treatment before the law, and no one is above the law. (Lawful)",
+        "Freedom. Tyrants must not be allowed to oppress the people. (Chaotic)",
+        "Might. If I become strong, I can take what I want—what I deserve. (Evil)",
+        "Sincerity. There's no good in pretending to be something I'm not. (Neutral)",
+        "Destiny. Nothing and no one can steer me away from my higher calling. (Any)",
+    ]
+    base_bonds: list[str] = [
+        "I have a family, but I have no idea where they are. One day, I hope to see them again.",
+        "I worked the land, I love the land, and I will protect the land.",
+        "A proud noble once gave me a horrible beating, and I will take my revenge on any bully I encounter.",
+        "My tools are symbols of my past life, and I carry them so that I will never forget my roots.",
+        "I protect those who cannot protect themselves.",
+        "I wish my childhood sweetheart had come with me to pursue my destiny.",
+    ]
+    base_flaws: list[str] = [
+        "The tyrant who rules my land will stop at nothing to see me killed.",
+        "I'm convinced of the significance of my destiny, and blind to my shortcomings and the risk of failure.",
+        "The people who knew me when I was young know my shameful secret, so I can never go home again.",
+        "I have a weakness for the vices of the city, especially hard drink.",
+        "Secretly, I believe that things would be better if I were a tyrant lording over the land.",
+        "I have trouble trusting in my allies.",
+    ]
+
+
 BACKGROUNDS = {
     BackgroundType.ACOLYTE: Background(
         name=BackgroundType.ACOLYTE,
+        description="""
+You have spent your life in the service of a temple to a specific god or pantheon of gods. 
+You act as an intermediary between the realm of the holy and the mortal world, performing sacred rites and offering sacrifices in order to conduct worshipers into the presence of the divine. 
+You are not necessarily a cleric-perform ing sacred rites is not the same thing as channeling divine power
+        """,
         skills=[SkillType.INSIGHT, SkillType.RELIGION],
         money=15,
         equipment=[
-            "Holy symbol",
-            "Prayer book or prayer wheel",
-            "5 sticks of incense",
-            "Vestments",
-            "Set of common clothes",
-            "Belt pouch",
-        ],
-        perks=[PerkType.SHELTER_OF_THE_FAITHFUL],
+            EQUIPMENT[EquipmentType.HOLY_SYMBOL_AMULET],
+            EQUIPMENT[EquipmentType.PRAYER_BOOK],
+            EQUIPMENT[EquipmentType.RELIGIOUS_CLOTHES],
+            EQUIPMENT[EquipmentType.COMMON_CLOTHES],
+            EQUIPMENT[EquipmentType.POUCH],
+        ]
+        + [EQUIPMENT[EquipmentType.INCENSE]] * 5,
+        feature=FeatureType.SHELTER_OF_THE_FAITHFUL,
         base_traits=[
             "I idolize a particular hero of my faith, and constantly refer to that person's deeds and example.",
             "I can find common ground between the fiercest enemies, empathizing with them and always working towards peace.",
@@ -79,5 +254,10 @@ BACKGROUNDS = {
             "I am suspicious of strangers and expect the worst of them.",
             "Once I pick a goal, I become obsessed with it to the detriment of everything else in my life.",
         ],
-    )
+    ),
+    BackgroundType.CHARLATAN: Charlatan(),
+    BackgroundType.FOLK_HERO: FolkHero(),
 }
+
+
+# Page 128

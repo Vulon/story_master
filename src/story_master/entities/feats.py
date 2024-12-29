@@ -1,19 +1,59 @@
 from enum import StrEnum
 from story_master.entities.perks import Perk
-from pydantic import BaseModel
-
-class TraitType(StrEnum):
-    ARTISTIC = "Artistic"
-    ATHLETIC = "Athletic"
-    VIGILANT = "Vigilant"
 
 
-class Trait(Perk):
-    name: TraitType
+class FeatType(StrEnum):
+    ARTISTIC = "Actor"
+    ATHLETIC = "Athlete"
+    VIGILANT = "Alert"
+    WAR_CASTER = "War Caster"
+    GRAPPLER = "Grappler"
+    LUCKY = "Lucky"
+    MOUNTED_COMBATANT = "Mounted Combatant"
+    OBSERVANT = "Observant"
+    MARTIAL_ADEPT = "Martial Adept"
+    INSPIRING_LEADER = "Inspiring Leader"
+    DUAL_WIELDER = "Dual Wielder"
+    SAVAGE_ATTACKER = "Savage Attacker"
+    TAVERN_BRAWLER = "Tavern Brawler"
+    LIGHTLY_ARMORED = "Lightly Armored"
+    MODERATELY_ARMORED = "Moderately Armored"
+    HEAVILY_ARMORED = "Heavily Armored"
+    DUNGEON_DELVER = "Dungeon Delver"
+    TOUGH = "Tough"
+    HEALER = "Healer"
+    GREAT_WEAPON_MASTER = "Great Weapon Master"
+    POLEARM_MASTER = "Polearm Master"
+    WEAPON_MASTER = "Weapon Master"
+    MEDIUM_ARMOR_MASTER = "Medium Armor Master"
+    HEAVY_ARMOR_MASTER = "Heavy Armor Master"
+    SHIELD_MASTER = "Shield Master"
+    SPELL_SNIPER = "Spell Sniper"
+    SHARPSHOOTER = "Sharpshooter"
+    CHARGER = "Charger"
+    DEFENSIVE_DUELIST = "Defensive Duelist"
+    SKILLED = "Skilled"
+    KEEN_MIND = "Keen Mind"
+    MOBILE = "Mobile"
+    MAGIC_INITIATE = "Magic Initiate"
+    SKULKER = "Skulker"
+    RITUAL_CASTER = "Ritual Caster"
+    ELEMENTAL_ADEPT = "Elemental Adept"
+    DURABLE = "Durable"
+    SENTINEL = "Sentinel"
+    MAGE_SLAYER = "Mage Slayer"
+    RESILIENT = "Resilient"
+    CROSSBOW_EXPERT = "Crossbow Expert"
+    LINGUIST = "Linguist"
+
+
+class Feat(Perk):
+    name: FeatType
+
 
 TRAITS = {
-    TraitType.ARTISTIC: Trait(
-        name=TraitType.ARTISTIC,
+    FeatType.ARTISTIC: Feat(
+        name=FeatType.ARTISTIC,
         description=(
             "Having learned the art of theater and mimicry, you gain the following benefits:\n\n"
             "• Increase your Charisma score by 1, up to a maximum of 20.\n"
@@ -27,8 +67,8 @@ TRAITS = {
         social=True,
         level_up=True,
     ),
-    TraitType.ATHLETIC: Trait(
-        name=TraitType.ATHLETIC,
+    FeatType.ATHLETIC: Feat(
+        name=FeatType.ATHLETIC,
         description=(
             "You have undergone intensive physical training and gain the following benefits:\n\n"
             "• Increase your Strength or Dexterity score by 1, up to a maximum of 20.\n"
@@ -39,8 +79,8 @@ TRAITS = {
         exploration=True,
         level_up=True,
     ),
-    TraitType.VIGILANT: Trait(
-        name=TraitType.VIGILANT,
+    FeatType.VIGILANT: Feat(
+        name=FeatType.VIGILANT,
         description=(
             "You are always ready for danger and gain the following benefits:\n\n"
             "• You gain a +5 bonus to initiative checks.\n"
@@ -49,6 +89,5 @@ TRAITS = {
         ),
         fight=True,
         exploration=True,
-    )
-
+    ),
 }

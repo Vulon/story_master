@@ -42,9 +42,6 @@ class WeaponType(StrEnum):
     BLOWGUN = "Blowgun"
 
 
-
-
-
 SIMPLE_WEAPONS = [
     WeaponType.QUARTERSTAFF,
     WeaponType.MACE,

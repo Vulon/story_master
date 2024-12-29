@@ -1,14 +1,20 @@
 from enum import StrEnum
 from pydantic import BaseModel
 from story_master.entities.characteristics import CharacteristicType
+from story_master.utils.selection import SomeOf
 from story_master.entities.items import (
-    ArmorType,
     WeaponType,
     WAR_WEAPONS,
     SIMPLE_WEAPONS,
     ArmorCategory,
+    Item,
+    WEAPONS,
+    EXPLORER_BUNDLE,
 )
-from story_master.entities.perks import Perk
+from story_master.entities.perks import Perk, PERKS, PerkType
+from story_master.entities.characteristics import SkillType
+from story_master.entities.conditions import ConditionType
+from typing import Literal
 
 
 class ClassType(StrEnum):
@@ -16,30 +22,85 @@ class ClassType(StrEnum):
     BARD = "Bard"
 
 
+class PerkException(Exception):
+    pass
+
+
 class Class(BaseModel):
     name: ClassType
     health_dice: int
     main_characteristics: list[CharacteristicType]
     saving_throws: list[CharacteristicType]
-    armor_proficiencies: list[ArmorType]
+    armor_proficiencies: list[ArmorCategory]
     weapon_proficiencies: list[WeaponType]
-    perks: list[Perk]
+    skills: list[SkillType] | SomeOf
     starting_money: float
+    starting_items: list[Item]
+    active_conditions: list[ConditionType] = []
+
+    def get_mastery_bonus(self, level: int) -> int:
+        pass
+
+    def get_perks(self, level: int) -> list[Perk]:
+        pass
+
+    def use_long_rest(self, level: int) -> None:
+        pass
+
+    def activate_perk(self, perk: PerkType) -> None:
+        pass
+
+    def disable_perk(self, perk: PerkType) -> None:
+        pass
+
+    def get_stats_increase(self, level: int) -> int:
+        pass
+
+    def get_short_class_description(self) -> str:
+        pass
 
 
-class Barbarian(BaseModel):
-    name = ClassType.BARBARIAN
-    health_dice = 12
-    main_characteristics = [CharacteristicType.STRENGTH]
-    saving_throws = [CharacteristicType.STRENGTH, CharacteristicType.CONSTITUTION]
-    armor_proficiencies = [
+class Barbarian(Class):
+    name: Literal[ClassType.BARBARIAN] = ClassType.BARBARIAN
+    health_dice: int = 12
+    is_enraged: bool = False
+    is_frenzied: bool = False
+    rage_uses_left: int = 0
+
+    main_characteristics: list[CharacteristicType] = [CharacteristicType.STRENGTH]
+    saving_throws: list[CharacteristicType] = [
+        CharacteristicType.STRENGTH,
+        CharacteristicType.CONSTITUTION,
+    ]
+    armor_proficiencies: list[ArmorCategory] = [
         ArmorCategory.LIGHT_ARMOR,
         ArmorCategory.MEDIUM_ARMOR,
         ArmorCategory.SHIELD,
     ]
-    weapon_proficiencies = WAR_WEAPONS + SIMPLE_WEAPONS
-    rage_uses: int
-    starting_money = 40
+    weapon_proficiencies: list[WeaponType] = WAR_WEAPONS + SIMPLE_WEAPONS
+
+    starting_money: float = 40
+    skills: list[SkillType] | SomeOf = SomeOf(
+        count=2,
+        items=[
+            SkillType.ATHLETICS,
+            SkillType.PERCEPTION,
+            SkillType.SURVIVAL,
+            SkillType.INTIMIDATION,
+            SkillType.NATURE,
+            SkillType.ANIMAL_HANDLING,
+        ],
+    )
+
+    starting_items: list[Item] = [
+        WEAPONS[WeaponType.GREATAXE],
+        WEAPONS[WeaponType.HANDAXE],
+        WEAPONS[WeaponType.HANDAXE],
+        WEAPONS[WeaponType.JAVELIN],
+        WEAPONS[WeaponType.JAVELIN],
+        WEAPONS[WeaponType.JAVELIN],
+        WEAPONS[WeaponType.JAVELIN],
+    ] + EXPLORER_BUNDLE
 
     def get_mastery_bonus(self, level: int) -> int:
         return (level - 1) // 4 + 2
@@ -64,7 +125,63 @@ class Barbarian(BaseModel):
             return 3
         return 4
 
+    def use_long_rest(self, level: int) -> None:
+        self.rage_uses_left = self.get_max_rage_uses(level)
+        self.is_enraged = False
+
+    def activate_perk(self, perk: PerkType) -> None:
+        if perk == PerkType.RAGE:
+            if self.rage_uses_left <= 0:
+                raise PerkException("No more rage uses left")
+            if self.is_enraged:
+                raise PerkException("Already enraged")
+            self.is_enraged = True
+            self.rage_uses_left -= 1
+            self.active_conditions.append(ConditionType.ENRAGED)
+        if perk == PerkType.RECKLESS_ATTACK:
+            if ConditionType.RECLESS_ATTACK_USED in self.active_conditions:
+                raise PerkException("Reckless attack already used")
+            self.active_conditions.append(ConditionType.RECLESS_ATTACK_USED)
+        if perk == PerkType.FRENZY:
+            self.is_frenzied = True
+            self.active_conditions.append(ConditionType.FRENZIED)
+
+    def disable_perk(self, perk: PerkType) -> None:
+        if perk == PerkType.RAGE:
+            self.is_enraged = False
+            self.active_conditions.remove(ConditionType.ENRAGED)
+            if self.is_frenzied:
+                self.is_frenzied = False
+                self.active_conditions.remove(ConditionType.FRENZIED)
+        if perk == PerkType.FRENZY:
+            self.is_frenzied = False
+            self.active_conditions.remove(ConditionType.FRENZIED)
+        if perk == PerkType.RECKLESS_ATTACK:
+            self.active_conditions.remove(ConditionType.RECLESS_ATTACK_USED)
+
     def get_perks(self, level: int) -> list[Perk]:
         perks = []
         if level > 0:
-            perks += []
+            perks += [PERKS[PerkType.UNARMORED_DEFENSE], PERKS[PerkType.RAGE]]
+        if level > 1:
+            perks += [PERKS[PerkType.RECKLESS_ATTACK], PERKS[PerkType.DANGER_SENSE]]
+        if level > 2:
+            perks += [PERKS[PerkType.FRENZY]]
+
+    def get_stats_increase(self, level: int) -> int:
+        # Levels at which stats increase
+        stat_increase_levels = [4, 8, 12, 16, 19]
+        # Calculate the total stat increases
+        total_increases = sum(
+            2 for threshold_level in stat_increase_levels if level >= threshold_level
+        )
+        return total_increases
+
+    def get_short_class_description(self) -> str:
+        return "A fierce warrior of primitive background who can enter a battle rage"
+
+
+# TODO: Implement Totem Warrior for Barbarian
+
+
+CLASSES = {ClassType.BARBARIAN: Barbarian()}

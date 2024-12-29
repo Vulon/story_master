@@ -36,6 +36,7 @@ class EquipmentType(StrEnum):
     ACID_VIAL = "Acid (vial)"
     BOOK = "Book"
     SPELLBOOK = "Spellbook"
+    PRAYER_BOOK = "Prayer Book"
     BELL = "Bell"
     QUIVER = "Quiver"
     SIGNET_RING = "Signet Ring"
@@ -70,6 +71,7 @@ class EquipmentType(StrEnum):
     COSTUME = "Costume"
     COMMON_CLOTHES = "Common Clothes"
     FINE_CLOTHES = "Fine Clothes"
+    RELIGIOUS_CLOTHES = "Religious Clothes"
     BLANKET = "Blanket"
     HUNTING_TRAP = "Hunting Trap"
     TENT = "Tent"
@@ -109,6 +111,7 @@ class EquipmentType(StrEnum):
     IRON_SPIKES = "Iron Spikes"
     PITON = "Piton"
     BASIC_POISON = "Basic Poison"
+    INCENSE = "Incense"
 
 
 EQUIPMENT = {
@@ -256,6 +259,11 @@ EQUIPMENT = {
     EquipmentType.SPELLBOOK: Equipment(
         name="Spellbook",
         price=50,
+        weight=3,
+    ),
+    EquipmentType.PRAYER_BOOK: Equipment(
+        name=EquipmentType.PRAYER_BOOK,
+        price=None,
         weight=3,
     ),
     EquipmentType.BELL: Equipment(
@@ -414,6 +422,11 @@ EQUIPMENT = {
         name="Costume",
         price=5,
         weight=4,
+    ),
+    EquipmentType.RELIGIOUS_CLOTHES: Equipment(
+        name=EquipmentType.RELIGIOUS_CLOTHES,
+        price=0.5,
+        weight=3,
     ),
     EquipmentType.COMMON_CLOTHES: Equipment(
         name="Common Clothes",
@@ -610,5 +623,8 @@ EQUIPMENT = {
     EquipmentType.BASIC_POISON: Equipment(
         name="Basic Poison",
         price=100,
+    ),
+    EquipmentType.INCENSE: Equipment(
+        name=EquipmentType.INCENSE,
     ),
 }

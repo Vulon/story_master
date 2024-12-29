@@ -13,7 +13,7 @@ class Armor(Item):
     armor_class: int
     armor_category: ArmorCategory
     uses_agility: bool
-    max_agility_bonus: int
+    max_agility_bonus: int | None
     strength_requirement: int
     strealth_disadvantage: bool
 

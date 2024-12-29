@@ -45,6 +45,9 @@ class InstrumentType(StrEnum):
 class Instrument(Item):
     description: str
 
+    def get_full_description(self) -> str:
+        return f"<Instrument>{self.name}: {self.description}. price={self.price}. weight={self.weight}</Instrument>"
+
 
 INSTRUMENTS = {
     InstrumentType.THIEVES_TOOLS: Instrument(
@@ -277,3 +280,24 @@ Proficiency in this set allows you to add your proficiency bonus to ability chec
         description="Herbalism Kit",
     ),
 }
+
+
+ARTISANS_TOOLS = [
+    INSTRUMENTS[InstrumentType.ALCHEMISTS_SUPPLIES],
+    INSTRUMENTS[InstrumentType.BREWERS_TOOLS],
+    INSTRUMENTS[InstrumentType.CALLIGRAPHERS_SUPPLIES],
+    INSTRUMENTS[InstrumentType.CARPENTERS_TOOLS],
+    INSTRUMENTS[InstrumentType.CARTOGRAPHERS_TOOLS],
+    INSTRUMENTS[InstrumentType.COBBLERS_TOOLS],
+    INSTRUMENTS[InstrumentType.COOKS_UTENSILS],
+    INSTRUMENTS[InstrumentType.GLASSBLOWERS_TOOLS],
+    INSTRUMENTS[InstrumentType.JEWELERS_TOOLS],
+    INSTRUMENTS[InstrumentType.LEATHERWORKERS_TOOLS],
+    INSTRUMENTS[InstrumentType.MASONS_TOOLS],
+    INSTRUMENTS[InstrumentType.PAINTERS_SUPPLIES],
+    INSTRUMENTS[InstrumentType.POTTERS_TOOLS],
+    INSTRUMENTS[InstrumentType.SMITHS_TOOLS],
+    INSTRUMENTS[InstrumentType.TINKERS_TOOLS],
+    INSTRUMENTS[InstrumentType.WEAVERS_TOOLS],
+    INSTRUMENTS[InstrumentType.WOODCARVERS_TOOLS],
+]
