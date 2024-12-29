@@ -5,6 +5,7 @@ from story_master.entities.items.equipment import EquipmentType, EQUIPMENT
 from story_master.entities.items.items import Item
 from story_master.entities.items.instruments import (
     InstrumentType,
+    Instrument,
     INSTRUMENTS,
     ARTISANS_TOOLS,
 )
@@ -61,12 +62,45 @@ class Background(BaseModel):
     skills: list[SkillType]
     money: float
     equipment: list[Item]
-    tool_proficiencies: list[InstrumentType]
+    tool_proficiencies: list[Instrument]
     feature: FeatureType
     base_traits: list[str]
     base_ideals: list[str]
     base_bonds: list[str]
     base_flaws: list[str]
+
+    selected_trait: list[str] | None = None
+    selected_ideal: list[str] | None = None
+    selected_bond: list[str] | None = None
+    selected_flaw: list[str] | None = None
+
+    def get_items_to_select(self):
+        return [
+            (
+                "selected_trait",
+                "base_traits",
+                2,
+                "Personality traits might describe the things the character likes, his or her past accomplishments, things the character dislikes or fears, character's self-attitude or mannerisms, or the influence of his or her ability scores.",
+            ),
+            (
+                "selected_ideal",
+                "base_ideals",
+                1,
+                "Ideals are beliefs that the character holds dear. They are the things that the character is willing to fight for, and they are the things that the character is willing to die for.",
+            ),
+            (
+                "selected_bond",
+                "base_bonds",
+                1,
+                "Bonds are relationships that the character has with other people, places, or things. They are the things that the character cares about, and they are the things that the character is willing to protect.",
+            ),
+            (
+                "selected_flaw",
+                "base_flaws",
+                1,
+                "Flaws are the character's weaknesses. They are the things that the character is afraid of, and they are the things that the character is ashamed of.",
+            ),
+        ]
 
 
 class Charlatan(Background):
@@ -84,9 +118,9 @@ this ointment—nothing more than a bit of fat with a sprinkle of silver dust—
 and there's a bridge in the city that just happens to be for sale. These marvels sound implausible, but you make them sound like the real deal
     """
     skills: list[SkillType] = [SkillType.DECEPTION, SkillType.SLEIGHT_OF_HAND]
-    tool_proficiencies: list[InstrumentType] = [
-        InstrumentType.DISGUISE_KIT,
-        InstrumentType.FORGERY_KIT,
+    tool_proficiencies: list[Instrument] = [
+        INSTRUMENTS[InstrumentType.DISGUISE_KIT],
+        INSTRUMENTS[InstrumentType.FORGERY_KIT],
     ]
     money: float = 15
     equipment: list[Item] = [
@@ -102,6 +136,7 @@ and there's a bridge in the city that just happens to be for sale. These marvels
         "I run sleight-of-hand cons on street corners.",
         "I convince people that worthless junk is worth their hard-earned money.",
     ]
+    selected_scam: list[str] | None = None
     feature: FeatureType = FeatureType.FALSE_IDENTITY
     base_traits: list[str] = [
         "I fall in and out of love easily, and am always pursuing someone.",
@@ -135,6 +170,16 @@ and there's a bridge in the city that just happens to be for sale. These marvels
         "I hate to admit it and will hate myself for it, but I'll run and preserve my own hide if the going gets tough.",
     ]
 
+    def get_items_to_select(self):
+        return super().get_items_to_select() + [
+            (
+                "selected_scam",
+                "scams",
+                1,
+                "Scams are the ways the character uses to deceive people.",
+            ),
+        ]
+
 
 class FolkHero(Background):
     # Page 123
@@ -144,9 +189,9 @@ class FolkHero(Background):
     Already the people of your home village regard you as their champion, and your destiny calls you to stand against the tyrants and monsters that threaten the common folk everywhere
     """
     skills: list[SkillType] = [SkillType.ANIMAL_HANDLING, SkillType.SURVIVAL]
-    tool_proficiencies: SomeOf = SomeOf(1, ARTISANS_TOOLS)
+    tool_proficiencies: SomeOf = SomeOf(count=1, items=ARTISANS_TOOLS)
     equipment: list[Item | SomeOf] = [
-        SomeOf(1, ARTISANS_TOOLS),
+        SomeOf(count=1, items=ARTISANS_TOOLS),
         EQUIPMENT[EquipmentType.SHOVEL],
         EQUIPMENT[EquipmentType.IRON_POT],
         EQUIPMENT[EquipmentType.COMMON_CLOTHES],
@@ -165,6 +210,18 @@ class FolkHero(Background):
         "A celestial, fey, or similar creature gave me a blessing or revealed my secret origin.",
         "Recruited into a lord's army, I rose to leadership and was commended for my heroism.",
     ]
+    selected_defining_event: list[str] | None = None
+
+    def get_items_to_select(self):
+        return super().get_items_to_select() + [
+            (
+                "selected_defining_event",
+                "defining_events",
+                1,
+                "Defining events are the events that shaped the character's life and made him or her a hero.",
+            ),
+        ]
+
     feature: FeatureType = FeatureType.RUSTIC_HOSPITALITY
     base_traits: list[str] = [
         "I judge people by their actions, not their words.",
@@ -202,7 +259,7 @@ class FolkHero(Background):
     ]
 
 
-BACKGROUNDS = {
+BACKGROUNDS: dict[BackgroundType, Background] = {
     BackgroundType.ACOLYTE: Background(
         name=BackgroundType.ACOLYTE,
         description="""
@@ -221,6 +278,7 @@ You are not necessarily a cleric-perform ing sacred rites is not the same thing 
         ]
         + [EQUIPMENT[EquipmentType.INCENSE]] * 5,
         feature=FeatureType.SHELTER_OF_THE_FAITHFUL,
+        tool_proficiencies=[],
         base_traits=[
             "I idolize a particular hero of my faith, and constantly refer to that person's deeds and example.",
             "I can find common ground between the fiercest enemies, empathizing with them and always working towards peace.",

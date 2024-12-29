@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from enum import StrEnum
-from story_master.entities.allignment import Allignment
+from story_master.entities.alignment import AlignmentType
 from story_master.entities.characteristics import Size
 from story_master.entities.perks import Perk, PerkType, PERKS
 from story_master.entities.characteristics import SkillType, SKILL_CONDITIONS
@@ -37,7 +37,7 @@ class Race(BaseModel):
     charisma_bonus: int = 0
     lifespan: int
     names: list[str]
-    default_allignment: Allignment
+    default_allignment: AlignmentType
     size: Size
     movement_speed: int
     perks: list[Perk] = []
@@ -70,7 +70,7 @@ DWARF = Race(
     name=RaceType.DWARF,
     streangth_bonus=2,
     lifespan=350,
-    default_allignment=Allignment.LAWFUL_GOOD,
+    default_allignment=AlignmentType.LAWFUL_GOOD,
     constitution_bonus=2,
     size=Size.MEDIUM,
     movement_speed=25,
@@ -183,7 +183,7 @@ ELF = Race(
         "Erevan",
     ],
     agility_bonus=2,
-    default_allignment=Allignment.CHAOTIC_GOOD,
+    default_allignment=AlignmentType.CHAOTIC_GOOD,
     size=Size.MEDIUM,
     movement_speed=30,
     perks=[

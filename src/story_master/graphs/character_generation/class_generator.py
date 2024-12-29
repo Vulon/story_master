@@ -125,7 +125,6 @@ class SkillSelector:
         self, character_description: str, class_object: Class, skills: SomeOf
     ) -> list[SkillType]:
         skills_description = self.create_skills_description(skills.items)
-        print(skills_description)
         return self.chain.invoke(
             {
                 "skills_amount": skills.count,
@@ -150,6 +149,8 @@ class ClassGenerator:
             skills = self.skill_selector.generate(
                 character_description, class_object, class_object.skills
             )
+            print("Selected skills")
+            print(skills)
             class_object.skills = skills
 
         return class_object

@@ -3,12 +3,24 @@ from pydantic import BaseModel
 from story_master.entities.classes import Class
 from story_master.entities.races import Race
 from story_master.entities.background import Background
+from enum import StrEnum
+from story_master.entities.alignment import AlignmentType
+
+
+class Gender(StrEnum):
+    MALE = "male"
+    FEMALE = "female"
+    OTHER = "other"
+
+
+GENDERS = [Gender.MALE, Gender.FEMALE, Gender.OTHER]
 
 
 class Character(BaseModel):
     name: str
-    sex: str
-    size: str
+    sex: Gender
+    age: int
+    alignment: AlignmentType
 
     strength: int
     agility: int
@@ -23,14 +35,13 @@ class Character(BaseModel):
 
     level: int = 1
     experience: int = 0
-    allignment: str
 
-    traits: str
+    traits: list[str]
     ideal: str
     bond: str
     flaw: str
 
-    money: int = 0
+    money: float = 0
 
 
 def calculate_bonus_from_characteristics(value: int) -> int:

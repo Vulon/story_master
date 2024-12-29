@@ -26,6 +26,9 @@ class PerkException(Exception):
     pass
 
 
+(15, 14, 13, 12, 10, 8)
+
+
 class Class(BaseModel):
     name: ClassType
     health_dice: int
@@ -37,6 +40,13 @@ class Class(BaseModel):
     starting_money: float
     starting_items: list[Item]
     active_conditions: list[ConditionType] = []
+
+    base_strength: int
+    base_agility: int
+    base_constitution: int
+    base_intelligence: int
+    base_wisdom: int
+    base_charisma: int
 
     def get_mastery_bonus(self, level: int) -> int:
         pass
@@ -66,6 +76,13 @@ class Barbarian(Class):
     is_enraged: bool = False
     is_frenzied: bool = False
     rage_uses_left: int = 0
+
+    base_strength: int = 15
+    base_agility: int = 13
+    base_constitution: int = 14
+    base_intelligence: int = 8
+    base_wisdom: int = 12
+    base_charisma: int = 10
 
     main_characteristics: list[CharacteristicType] = [CharacteristicType.STRENGTH]
     saving_throws: list[CharacteristicType] = [

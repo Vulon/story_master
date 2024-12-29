@@ -33,6 +33,9 @@ class Size(StrEnum):
     LARGE = "Large"
 
 
+SIZES = [Size.SMALL, Size.MEDIUM, Size.LARGE]
+
+
 class SkillType(StrEnum):
     ACROBATICS = "Acrobatics"
     ANIMAL_HANDLING = "Animal Handling"
