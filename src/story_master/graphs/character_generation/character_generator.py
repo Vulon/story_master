@@ -8,8 +8,9 @@ from langchain.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
 import re
 from difflib import get_close_matches
-from story_master.entities.character import Gender, GENDERS, Character
+from story_master.entities.character import Gender, GENDERS, Character, calculate_bonus_from_characteristics
 from story_master.entities.alignment import AlignmentType, ALIGNMENTS
+from story_master.entities.classes import ClassType
 
 
 class CharacterParameterGenerator:
@@ -167,11 +168,17 @@ class CharacterGenerator:
         wisdom = class_object.base_wisdom + race.wisdom_bonus
         charisma = class_object.base_charisma + race.charisma_bonus
 
+        max_health = class_object.health_dice + calculate_bonus_from_characteristics(constitution)
+
+        # TODO: Implement level up mechanic
+
         character = Character(
             name=name,
             sex=gender,
             age=age,
             alignment=alignment,
+            max_health=max_health,
+            current_health=max_health,
             strength=strength,
             agility=agility,
             constitution=constitution,

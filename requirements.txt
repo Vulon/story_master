@@ -6,7 +6,3 @@ pydantic
 pydantic-settings
 
 httpx
-neo4j
-
-pymgclient
-gqlalchemy

@@ -48,6 +48,7 @@ class Class(BaseModel):
     base_wisdom: int
     base_charisma: int
 
+
     def get_mastery_bonus(self, level: int) -> int:
         pass
 

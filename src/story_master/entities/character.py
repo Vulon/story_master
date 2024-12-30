@@ -22,6 +22,9 @@ class Character(BaseModel):
     age: int
     alignment: AlignmentType
 
+    max_health: int
+    current_health: int
+
     strength: int
     agility: int
     constitution: int
@@ -59,3 +62,4 @@ def calculate_mastery_from_level(level: int) -> int:
 def calculate_experience_to_next_level(level: int) -> int:
     # TODO: Implement a better formula
     return level * 1000
+
