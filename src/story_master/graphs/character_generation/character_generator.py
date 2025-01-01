@@ -1,16 +1,23 @@
+import re
+from difflib import get_close_matches
+
+from langchain.prompts import PromptTemplate
 from langchain_core.language_models.chat_models import BaseChatModel
-from story_master.graphs.character_generation.race_generator import RaceGenerator
-from story_master.graphs.character_generation.class_generator import ClassGenerator
+from langchain_core.output_parsers import StrOutputParser
+
+from story_master.entities.alignment import ALIGNMENTS, AlignmentType
+from story_master.entities.character import (
+    GENDERS,
+    Character,
+    Gender,
+    calculate_bonus_from_characteristics,
+)
+from story_master.entities.items.items import Item
 from story_master.graphs.character_generation.background_generator import (
     BackgroundGenerator,
 )
-from langchain.prompts import PromptTemplate
-from langchain_core.output_parsers import StrOutputParser
-import re
-from difflib import get_close_matches
-from story_master.entities.character import Gender, GENDERS, Character, calculate_bonus_from_characteristics
-from story_master.entities.alignment import AlignmentType, ALIGNMENTS
-from story_master.entities.classes import ClassType
+from story_master.graphs.character_generation.class_generator import ClassGenerator
+from story_master.graphs.character_generation.race_generator import RaceGenerator
 
 
 class CharacterParameterGenerator:
@@ -133,6 +140,16 @@ class CharacterNameGenerator:
         return name
 
 
+def remove_duplicates(items: list[Item]) -> list[Item]:
+    names = set()
+    unique_items = []
+    for item in items:
+        if item.name not in names:
+            unique_items.append(item)
+            names.add(item.name)
+    return unique_items
+
+
 class CharacterGenerator:
     def __init__(self, llm_model: BaseChatModel):
         self.llm_model = llm_model
@@ -168,7 +185,29 @@ class CharacterGenerator:
         wisdom = class_object.base_wisdom + race.wisdom_bonus
         charisma = class_object.base_charisma + race.charisma_bonus
 
-        max_health = class_object.health_dice + calculate_bonus_from_characteristics(constitution)
+        level = 1
+
+        saving_throws = class_object.saving_throws
+
+        armor_proficiencies = remove_duplicates(
+            class_object.armor_proficiencies + race.armor_proficiencies
+        )
+        weapon_proficiencies = sorted(
+            set(class_object.weapon_proficiencies + race.weapon_proficiencies)
+        )
+        skills = sorted(set(class_object.skills + race.skills + background.skills))
+        items = class_object.starting_items + background.equipment
+        # TODO: Fix the difference
+        tool_proficiencies = (
+            background.tool_proficiencies + race.instrument_proficiencies
+        )
+        tool_proficiencies = remove_duplicates(tool_proficiencies)
+        money = class_object.starting_money + background.money
+        perks = remove_duplicates(class_object.get_perks(level) + race.perks)
+
+        max_health = class_object.health_dice + calculate_bonus_from_characteristics(
+            constitution
+        )
 
         # TODO: Implement level up mechanic
 
@@ -188,10 +227,15 @@ class CharacterGenerator:
             race=race,
             klass=class_object,
             background=background,
-            traits=background.selected_trait,
-            ideal=background.selected_ideal[0],
-            bond=background.selected_bond[0],
-            flaw=background.selected_flaw[0],
+            level=level,
+            saving_throws=saving_throws,
+            armor_proficiencies=armor_proficiencies,
+            weapon_proficiencies=weapon_proficiencies,
+            skills=skills,
+            items=items,
+            tool_proficiencies=tool_proficiencies,
+            perks=perks,
+            money=money,
         )
 
         return character

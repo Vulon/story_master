@@ -1,10 +1,12 @@
-from langchain_core.language_models.chat_models import BaseChatModel
-from langchain.prompts import PromptTemplate
-from langchain_core.output_parsers import StrOutputParser
-import re
 import random
+import re
 from difflib import get_close_matches
-from story_master.entities.background import BackgroundType, BACKGROUNDS, Background
+
+from langchain.prompts import PromptTemplate
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.output_parsers import StrOutputParser
+
+from story_master.entities.background import BACKGROUNDS, Background, BackgroundType
 from story_master.utils.selection import SomeOf
 
 

@@ -1,4 +1,5 @@
 from enum import StrEnum
+
 from story_master.entities.items.items import Item
 
 

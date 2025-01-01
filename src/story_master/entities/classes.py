@@ -1,20 +1,26 @@
 from enum import StrEnum
-from pydantic import BaseModel
-from story_master.entities.characteristics import CharacteristicType
-from story_master.utils.selection import SomeOf
-from story_master.entities.items import (
-    WeaponType,
-    WAR_WEAPONS,
-    SIMPLE_WEAPONS,
-    ArmorCategory,
-    Item,
-    WEAPONS,
-    EXPLORER_BUNDLE,
-)
-from story_master.entities.perks import Perk, PERKS, PerkType
-from story_master.entities.characteristics import SkillType
-from story_master.entities.conditions import ConditionType
 from typing import Literal
+
+from pydantic import BaseModel
+
+from story_master.entities.characteristics import CharacteristicType, SkillType
+from story_master.entities.conditions import ConditionType
+from story_master.entities.items import (
+    ARMORS,
+    EXPLORER_BUNDLE,
+    LIGHT_ARMORS,
+    MEDIUM_ARMORS,
+    SIMPLE_WEAPONS,
+    WAR_WEAPONS,
+    WEAPONS,
+    Armor,
+    ArmorCategory,
+    ArmorType,
+    Item,
+    WeaponType,
+)
+from story_master.entities.perks import PERKS, Perk, PerkType
+from story_master.utils.selection import SomeOf
 
 
 class ClassType(StrEnum):
@@ -34,7 +40,7 @@ class Class(BaseModel):
     health_dice: int
     main_characteristics: list[CharacteristicType]
     saving_throws: list[CharacteristicType]
-    armor_proficiencies: list[ArmorCategory]
+    armor_proficiencies: list[Armor]
     weapon_proficiencies: list[WeaponType]
     skills: list[SkillType] | SomeOf
     starting_money: float
@@ -47,7 +53,6 @@ class Class(BaseModel):
     base_intelligence: int
     base_wisdom: int
     base_charisma: int
-
 
     def get_mastery_bonus(self, level: int) -> int:
         pass
@@ -90,11 +95,9 @@ class Barbarian(Class):
         CharacteristicType.STRENGTH,
         CharacteristicType.CONSTITUTION,
     ]
-    armor_proficiencies: list[ArmorCategory] = [
-        ArmorCategory.LIGHT_ARMOR,
-        ArmorCategory.MEDIUM_ARMOR,
-        ArmorCategory.SHIELD,
-    ]
+    armor_proficiencies: list[ArmorCategory] = (
+        LIGHT_ARMORS + MEDIUM_ARMORS + [ARMORS[ArmorType.SHIELD]]
+    )
     weapon_proficiencies: list[WeaponType] = WAR_WEAPONS + SIMPLE_WEAPONS
 
     starting_money: float = 40
@@ -185,6 +188,7 @@ class Barbarian(Class):
             perks += [PERKS[PerkType.RECKLESS_ATTACK], PERKS[PerkType.DANGER_SENSE]]
         if level > 2:
             perks += [PERKS[PerkType.FRENZY]]
+        return perks
 
     def get_stats_increase(self, level: int) -> int:
         # Levels at which stats increase

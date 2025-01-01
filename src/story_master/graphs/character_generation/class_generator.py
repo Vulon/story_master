@@ -1,11 +1,13 @@
-from langchain_core.language_models.chat_models import BaseChatModel
-from langchain.prompts import PromptTemplate
-from langchain_core.output_parsers import StrOutputParser
 import re
 from difflib import get_close_matches
-from story_master.entities.classes import ClassType, CLASSES, Class
+
+from langchain.prompts import PromptTemplate
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.output_parsers import StrOutputParser
+
+from story_master.entities.characteristics import SKILL_CONDITIONS, SkillType
+from story_master.entities.classes import CLASSES, Class, ClassType
 from story_master.utils.selection import SomeOf
-from story_master.entities.characteristics import SkillType, SKILL_CONDITIONS
 
 
 class ClassSelector:

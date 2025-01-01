@@ -1,7 +1,6 @@
 from story_master.entities.items.equipment import EQUIPMENT, EquipmentType
 from story_master.entities.items.instruments import INSTRUMENTS, InstrumentType
 
-
 ARTIST_BUNDLE = (
     [
         EQUIPMENT[EquipmentType.BAG],

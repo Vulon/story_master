@@ -1,6 +1,5 @@
 from story_master.engine import Engine
 
-
 # db = Memgraph(
 #     host="localhost",
 #     port=7687

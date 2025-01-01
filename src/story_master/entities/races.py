@@ -1,16 +1,18 @@
-from pydantic import BaseModel
 from enum import StrEnum
+
+from pydantic import BaseModel
+
 from story_master.entities.alignment import AlignmentType
-from story_master.entities.characteristics import Size
-from story_master.entities.perks import Perk, PerkType, PERKS
-from story_master.entities.characteristics import SkillType, SKILL_CONDITIONS
+from story_master.entities.characteristics import SKILL_CONDITIONS, Size, SkillType
 from story_master.entities.items import (
-    ArmorType,
-    WeaponType,
-    InstrumentType,
-    ArmorCategory,
     INSTRUMENTS,
+    Armor,
+    Instrument,
+    InstrumentType,
+    WeaponType,
 )
+from story_master.entities.items.armor import LIGHT_ARMORS, MEDIUM_ARMORS
+from story_master.entities.perks import PERKS, Perk, PerkType
 
 
 class RaceType(StrEnum):
@@ -37,30 +39,39 @@ class Race(BaseModel):
     charisma_bonus: int = 0
     lifespan: int
     names: list[str]
-    default_allignment: AlignmentType
+    default_alignment: AlignmentType
     size: Size
     movement_speed: int
     perks: list[Perk] = []
     skills: list[SkillType] = []
     weapon_proficiencies: list[WeaponType] = []
-    instrument_proficiencies: list[InstrumentType] = []
-    armor_proficiencies: list[ArmorType] = []
+    instrument_proficiencies: list[Instrument] = []
+    armor_proficiencies: list[Armor] = []
 
     def get_full_description(self, include_names: bool = False) -> str:
         output = f"""<Race>
         type: {self.name}
         description: {self.description}
         lifespan: {self.lifespan}
-        default_allignment: {self.default_allignment}
+        default_alignment: {self.default_alignment}
         {"Names: " + ", ".join(self.names) if include_names else ""}
         size: {self.size}
         movement_speed: {self.movement_speed}
         perks: [{"; ".join([perk.get_full_description() for perk in self.perks])}]
         skills: [{"; ".join([f" {skill.value}: {SKILL_CONDITIONS[skill]} " for skill in self.skills])}]
         weapon_proficiencies: [{"; ".join([weapon.value for weapon in self.weapon_proficiencies])}]
-        instrument_proficiencies: [{"; ".join([INSTRUMENTS[instrument].get_full_description() for instrument in self.instrument_proficiencies])}]
-        armor_proficiencies: [{"; ".join([armor.value for armor in self.armor_proficiencies])}]
+        instrument_proficiencies: [{"; ".join([instrument.get_full_description() for instrument in self.instrument_proficiencies])}]
+        armor_proficiencies: [{"; ".join([armor.name for armor in self.armor_proficiencies])}]
         </Race>
+        """
+        return output
+
+    def get_shorter_description(self) -> str:
+        output = f"""type: {self.name}
+        description: {self.description}
+        lifespan: {self.lifespan}
+        size: {self.size}
+        movement_speed: {self.movement_speed}
         """
         return output
 
@@ -68,9 +79,9 @@ class Race(BaseModel):
 DWARF = Race(
     description="",
     name=RaceType.DWARF,
-    streangth_bonus=2,
+    strength_bonus=2,
     lifespan=350,
-    default_allignment=AlignmentType.LAWFUL_GOOD,
+    default_alignment=AlignmentType.LAWFUL_GOOD,
     constitution_bonus=2,
     size=Size.MEDIUM,
     movement_speed=25,
@@ -86,9 +97,9 @@ DWARF = Race(
         WeaponType.WARHAMMER,
     ],
     instrument_proficiencies=[
-        InstrumentType.SMITHS_TOOLS,
-        InstrumentType.BREWERS_TOOLS,
-        InstrumentType.MASONS_TOOLS,
+        INSTRUMENTS[InstrumentType.SMITHS_TOOLS],
+        INSTRUMENTS[InstrumentType.BREWERS_TOOLS],
+        INSTRUMENTS[InstrumentType.MASONS_TOOLS],
     ],
     names=[
         "Adrik",
@@ -183,7 +194,7 @@ ELF = Race(
         "Erevan",
     ],
     agility_bonus=2,
-    default_allignment=AlignmentType.CHAOTIC_GOOD,
+    default_alignment=AlignmentType.CHAOTIC_GOOD,
     size=Size.MEDIUM,
     movement_speed=30,
     perks=[
@@ -199,7 +210,7 @@ RACES = {
             name=RaceType.MOUNTAIN_DWARF,
             description="You are a mountain dwarf, a breed of dwarf that lives in the mountains and is known for its strength and endurance.",
             strength_bonus=2,
-            armor_proficiencies=[ArmorCategory.MEDIUM_ARMOR, ArmorCategory.LIGHT_ARMOR],
+            armor_proficiencies=LIGHT_ARMORS + MEDIUM_ARMORS,
         )
     ),
     RaceType.HILL_DWARF: DWARF.model_copy(

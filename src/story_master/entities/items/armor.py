@@ -1,4 +1,5 @@
 from enum import StrEnum
+
 from story_master.entities.items.items import Item
 
 
@@ -179,3 +180,27 @@ ARMORS = {
         strealth_disadvantage=False,
     ),
 }
+
+LIGHT_ARMORS = [
+    ARMORS[armor]
+    for armor in [ArmorType.PADDED, ArmorType.LEATHER, ArmorType.STUDDED_LEATHER]
+]
+MEDIUM_ARMORS = [
+    ARMORS[armor]
+    for armor in [
+        ArmorType.HIDE,
+        ArmorType.CHAIN_SHIRT,
+        ArmorType.SCALE_MAIL,
+        ArmorType.BREASTPLATE,
+        ArmorType.HALF_PLATE,
+    ]
+]
+HEAVY_ARMORS = [
+    ARMORS[armor]
+    for armor in [
+        ArmorType.RING_MAIL,
+        ArmorType.CHAIN_MAIL,
+        ArmorType.SPLINT,
+        ArmorType.PLATE,
+    ]
+]

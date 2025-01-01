@@ -1,14 +1,16 @@
-from pydantic import BaseModel
 from enum import StrEnum
+
+from pydantic import BaseModel
+
 from story_master.entities.characteristics import SkillType
-from story_master.entities.items.equipment import EquipmentType, EQUIPMENT
-from story_master.entities.items.items import Item
+from story_master.entities.items.equipment import EQUIPMENT, EquipmentType
 from story_master.entities.items.instruments import (
-    InstrumentType,
-    Instrument,
-    INSTRUMENTS,
     ARTISANS_TOOLS,
+    INSTRUMENTS,
+    Instrument,
+    InstrumentType,
 )
+from story_master.entities.items.items import Item
 from story_master.utils.selection import SomeOf
 
 
@@ -73,6 +75,18 @@ class Background(BaseModel):
     selected_ideal: list[str] | None = None
     selected_bond: list[str] | None = None
     selected_flaw: list[str] | None = None
+
+    def get_description(self) -> str:
+        full_description = [
+            f"Background: {self.name}",
+            f"Description: {self.description}",
+            f"Feature: {FEATURES[self.feature]}",
+            f"Traits: {', '.join(self.selected_trait)}",
+            f"Ideal: {self.selected_ideal}",
+            f"Bond: {self.selected_bond}",
+            f"Flaw: {self.selected_flaw}",
+        ]
+        return "\n".join(full_description)
 
     def get_items_to_select(self):
         return [
@@ -180,6 +194,9 @@ and there's a bridge in the city that just happens to be for sale. These marvels
             ),
         ]
 
+    def get_description(self) -> str:
+        return super().get_description() + f"\n Scam: {self.selected_scam}"
+
 
 class FolkHero(Background):
     # Page 123
@@ -221,6 +238,12 @@ class FolkHero(Background):
                 "Defining events are the events that shaped the character's life and made him or her a hero.",
             ),
         ]
+
+    def get_description(self) -> str:
+        return (
+            super().get_description()
+            + f"\n Defining event: {self.selected_defining_event}"
+        )
 
     feature: FeatureType = FeatureType.RUSTIC_HOSPITALITY
     base_traits: list[str] = [

@@ -1,10 +1,11 @@
-from langchain_core.language_models.chat_models import BaseChatModel
-from langchain.prompts import PromptTemplate
-from langchain_core.output_parsers import StrOutputParser
-from story_master.entities.races import RaceType, RACES, Race
 import re
 from difflib import get_close_matches
 
+from langchain.prompts import PromptTemplate
+from langchain_core.language_models.chat_models import BaseChatModel
+from langchain_core.output_parsers import StrOutputParser
+
+from story_master.entities.races import RACES, Race, RaceType
 
 output_pattern = re.compile(r"<Output>(.*)</Output>")
 
