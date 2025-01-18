@@ -24,12 +24,13 @@ class LocationDecomposer:
         General areas like Faerûn have different regions like the Sword Coast.
         Regions have different settlements like Waterdeep.
         Settlements have different districts like the Dock Ward.
-        Districts or small settlements have different buildings like the Friendly Inn.
+        Districts or small settlements have different buildings like taverns, shops, etc.
         Don't output more than 5 smaller locations.
-    4. Output the names of smaller locations in XML format in English.
+    4. Output the names of smaller locations in XML format
         Format: <Location>First location</Location><Location>Second location</Location>        
         Don't output the parent location.
         All smaller locations should be on the same level and be smaller than the parent location.
+    All names should be in English
     
     -Large location description-
     {location_description}

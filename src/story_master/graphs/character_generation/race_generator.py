@@ -38,19 +38,26 @@ Output:
         self.llm_model = llm_model
         prompt = PromptTemplate.from_template(self.PROMPT)
         self.chain = prompt | llm_model | StrOutputParser() | self.parse_output
+        self.default_race = RaceType.HILL_DWARF
 
     def generate(self, character_description: str) -> Race:
-        races_description = self.create_races_description()
-        print("Running generations")
-        race_type = self.chain.invoke(
-            {
-                "races_description": races_description,
-                "character_description": character_description,
-            }
-        )
-        return RACES[race_type].model_copy()
+        try:
+            races_description = self.create_races_description()
+            race_type = self.chain.invoke(
+                {
+                    "races_description": races_description,
+                    "character_description": character_description,
+                }
+            )
+            return RACES[race_type].model_copy()
+        except Exception as e:
+            print("Error while generating a race")
+            print(e)
+            return RACES[self.default_race].model_copy()
 
     def parse_output(self, output: str) -> RaceType:
+        print("Raw race output", output)
+        output = output.replace("\n", " ")
         match = output_pattern.search(output)
         parsed_string = get_close_matches(
             match.group(1), [item.value for item in RACES.keys()]

@@ -13,6 +13,9 @@ from story_master.graphs.environment_generation.location_selector import (
 from story_master.graphs.environment_generation.route_generator import RouteGenerator
 from story_master.settings import Settings
 from story_master.storage.map.map_model import Location
+from story_master.graphs.environment_generation.populate_location import (
+    LocationPopulationManager,
+)
 from story_master.storage.storage_manager import Sim, StorageManager
 
 
@@ -30,6 +33,7 @@ class GameInitializer:
         self.location_decomposer = LocationDecomposer(llm_model)
         self.character_generator = CharacterGenerator(llm_model)
         self.route_generator = RouteGenerator(llm_model)
+        self.population_manager = LocationPopulationManager(llm_model)
 
     def pick_starting_location(self) -> Location:
         available_locations = [
@@ -91,24 +95,39 @@ class GameInitializer:
 
     def initialize_game(self):
         player_id = self.settings.main_player_id
-        if player_id >= len(self.storage_manager.character_storage.player_characters):
+        if player_id not in self.storage_manager.character_storage.player_characters:
+            starting_location = self.storage_manager.get_location(12)
+            print("Don't forget to remove this hardcoded location")
+            print("!")
+            # starting_location = self.pick_starting_location()
+            characters = self.storage_manager.get_location_characters(starting_location)
+            if len(characters) < 1:
+                print("populating the area")
+                character_descriptions = self.population_manager.generate(
+                    starting_location, characters
+                )
+                print("Generated character descriptions:", character_descriptions)
+                for description in character_descriptions:
+                    character = self.character_generator.generate(
+                        description, False, starting_location
+                    )
+                    print("Generated", character.name)
+                    self.storage_manager.add_character(
+                        character, False, starting_location.id
+                    )
             print("Generating new character for the player")
             character = self.character_generator.generate(
-                "A great leader from the dwarven kingdom. He is a master of the axe and a great strategist."
+                "A great leader from the dwarven kingdom. He is a master of the axe and a great strategist.",
+                True,
+                starting_location,
             )
             main_player = Sim(
+                id=player_id,
                 character=character,
                 memories=[],
+                current_location_id=starting_location.id,
             )
-            self.storage_manager.character_storage.player_characters.insert(
-                player_id, main_player
+            self.storage_manager.character_storage.player_characters[player_id] = (
+                main_player
             )
-        else:
-            main_player = self.storage_manager.character_storage.player_characters[
-                player_id
-            ]
-        if main_player.current_location_id is None:
-            print("Current location is None. Picking a new one")
-            starting_location = self.pick_starting_location()
-            main_player.current_location_id = starting_location.id
-        self.storage_manager.save_characters()
+            self.storage_manager.save_characters()

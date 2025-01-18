@@ -86,7 +86,7 @@ class Background(BaseModel):
             f"Bond: {self.selected_bond}",
             f"Flaw: {self.selected_flaw}",
         ]
-        return "\n".join(full_description)
+        return "<Background>" + ". ".join(full_description) + "</Background>"
 
     def get_items_to_select(self):
         return [

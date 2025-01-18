@@ -4,7 +4,7 @@ from story_master.entities.items.items import Item
 
 
 class Equipment(Item):
-    quantity: int = 1
+
     length: int | None = None
     description: str = ""
 
@@ -135,25 +135,25 @@ EQUIPMENT = {
         name="Crossbow Bolts",
         price=1,
         weight=1.5,
-        quantity=20,
+        base_quantity=20,
     ),
     EquipmentType.BLOWGUN_NEEDLES: Equipment(
         name="Blowgun Needles",
         price=1,
         weight=1,
-        quantity=50,
+        base_quantity=50,
     ),
     EquipmentType.SLING_BULLETS: Equipment(
         name="Sling Bullets",
         price=0.04,
         weight=1.5,
-        quantity=20,
+        base_quantity=20,
     ),
     EquipmentType.ARROWS: Equipment(
         name="Arrows",
         price=1,
         weight=1,
-        quantity=20,
+        base_quantity=20,
     ),
     EquipmentType.BARREL: Equipment(
         name="Barrel",
@@ -233,7 +233,7 @@ EQUIPMENT = {
         name="Caltrops",
         price=1,
         weight=2,
-        quantity=20,
+        base_quantity=20,
         description="As an action, you can spread a bag of caltrops to cover a square area that is 5 feet on a side. Any creature that enters the area must succeed on a DC 15 Dexterity saving throw or stop moving and take 1 piercing damage. Until the creature regains at least 1 hit point, its walking speed is reduced by 10 feet. A creature moving through the area at half speed doesn't need to make the saving throw.",
     ),
     EquipmentType.MANACLES: Equipment(
@@ -388,7 +388,7 @@ EQUIPMENT = {
         name="Metal Balls",
         price=1,
         weight=2,
-        quantity=1000,
+        base_quantity=1000,
     ),
     EquipmentType.BAG: Equipment(
         name="Bag",
@@ -614,7 +614,7 @@ EQUIPMENT = {
         name="Iron Spikes",
         price=1,
         weight=5,
-        quantity=10,
+        base_quantity=10,
     ),
     EquipmentType.PITON: Equipment(
         name="Piton",

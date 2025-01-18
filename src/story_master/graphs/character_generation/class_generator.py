@@ -6,7 +6,7 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import StrOutputParser
 
 from story_master.entities.characteristics import SKILL_CONDITIONS, SkillType
-from story_master.entities.classes import CLASSES, Class, ClassType
+from story_master.entities.classes import CLASSES, AdventurerClass, AdventurerClassType
 from story_master.utils.selection import SomeOf
 
 
@@ -37,9 +37,10 @@ class ClassSelector:
 
     def __init__(self, llm_model: BaseChatModel):
         self.llm_model = llm_model
-        self.output_pattern = re.compile(r"<Output>(.*)</Output>")
+        self.output_pattern = re.compile(r"<Output>(.*?)</Output>")
         prompt = PromptTemplate.from_template(self.PROMPT)
         self.chain = prompt | llm_model | StrOutputParser() | self.parse_output
+        self.default_class = AdventurerClassType.BARBARIAN
 
     def create_short_class_descriptions(self) -> str:
         descriptions = []
@@ -53,24 +54,31 @@ class ClassSelector:
     def create_all_class_names(self) -> str:
         return "; ".join([class_type.value for class_type in CLASSES.keys()])
 
-    def parse_output(self, output: str) -> ClassType:
+    def parse_output(self, output: str) -> AdventurerClassType:
+        print("Raw adventurer class output", output)
+        output = output.replace("\n", " ")
         match = self.output_pattern.search(output)
         parsed_string = get_close_matches(
             match.group(1), [item.value for item in CLASSES.keys()]
         )[0]
-        return ClassType(parsed_string)
+        return AdventurerClassType(parsed_string)
 
-    def generate(self, character_description: str) -> ClassType:
-        class_names = self.create_all_class_names()
-        class_descriptions = self.create_short_class_descriptions()
-        class_type = self.chain.invoke(
-            {
-                "class_names": class_names,
-                "class_descriptions": class_descriptions,
-                "character_description": character_description,
-            }
-        )
-        return class_type
+    def generate(self, character_description: str) -> AdventurerClassType:
+        try:
+            class_names = self.create_all_class_names()
+            class_descriptions = self.create_short_class_descriptions()
+            class_type = self.chain.invoke(
+                {
+                    "class_names": class_names,
+                    "class_descriptions": class_descriptions,
+                    "character_description": character_description,
+                }
+            )
+            return class_type
+        except Exception as e:
+            print("Error while generating a class")
+            print(e)
+            return self.default_class
 
 
 class SkillSelector:
@@ -124,7 +132,7 @@ class SkillSelector:
         return "\n".join(descriptions)
 
     def generate(
-        self, character_description: str, class_object: Class, skills: SomeOf
+        self, character_description: str, class_object: AdventurerClass, skills: SomeOf
     ) -> list[SkillType]:
         skills_description = self.create_skills_description(skills.items)
         return self.chain.invoke(
@@ -136,13 +144,13 @@ class SkillSelector:
         )
 
 
-class ClassGenerator:
+class AdventurerClassGenerator:
     def __init__(self, llm_model: BaseChatModel):
         self.llm_model = llm_model
         self.class_selector = ClassSelector(self.llm_model)
         self.skill_selector = SkillSelector(self.llm_model)
 
-    def generate(self, character_description: str) -> Class:
+    def generate(self, character_description: str) -> AdventurerClass:
         class_type = self.class_selector.generate(character_description)
         print("Selected class")
         print(class_type)

@@ -18,14 +18,25 @@ from story_master.entities.items import (
     ArmorType,
     Item,
     WeaponType,
+    EQUIPMENT,
+    EquipmentType,
 )
 from story_master.entities.perks import PERKS, Perk, PerkType
 from story_master.utils.selection import SomeOf
 
 
-class ClassType(StrEnum):
+class AdventurerClassType(StrEnum):
     BARBARIAN = "Barbarian"
     BARD = "Bard"
+
+
+class CivilianClassType(StrEnum):
+    COMMONER = "Commoner"
+
+
+class CreatureClassType(StrEnum):
+    MONSTER = "Monster"
+    ANIMAL = "Animal"
 
 
 class PerkException(Exception):
@@ -35,9 +46,42 @@ class PerkException(Exception):
 (15, 14, 13, 12, 10, 8)
 
 
-class Class(BaseModel):
-    name: ClassType
+class BaseClass(BaseModel):
+    name: AdventurerClassType | CivilianClassType | CreatureClassType
     health_dice: int
+    base_strength: int
+    base_agility: int
+    base_constitution: int
+    base_intelligence: int
+    base_wisdom: int
+    base_charisma: int
+
+    def get_short_class_description(self) -> str:
+        pass
+
+
+class CivilianClass(BaseClass):
+    name: Literal[CivilianClassType.COMMONER] = CivilianClassType.COMMONER
+    health_dice: int = 6
+    base_strength: int = 10
+    base_agility: int = 10
+    base_constitution: int = 10
+    base_intelligence: int = 10
+    base_wisdom: int = 10
+    base_charisma: int = 10
+
+    # TODO: Add more starting items
+    starting_items: list[Item] = [
+        EQUIPMENT[EquipmentType.COMMON_CLOTHES],
+    ]
+
+    def get_short_class_description(self) -> str:
+        return "A common person with no combat skills"
+
+
+class AdventurerClass(BaseClass):
+    name: AdventurerClassType
+
     main_characteristics: list[CharacteristicType]
     saving_throws: list[CharacteristicType]
     armor_proficiencies: list[Armor]
@@ -46,13 +90,6 @@ class Class(BaseModel):
     starting_money: float
     starting_items: list[Item]
     active_conditions: list[ConditionType] = []
-
-    base_strength: int
-    base_agility: int
-    base_constitution: int
-    base_intelligence: int
-    base_wisdom: int
-    base_charisma: int
 
     def get_mastery_bonus(self, level: int) -> int:
         pass
@@ -76,8 +113,12 @@ class Class(BaseModel):
         pass
 
 
-class Barbarian(Class):
-    name: Literal[ClassType.BARBARIAN] = ClassType.BARBARIAN
+class CreatureClass(BaseClass):
+    pass
+
+
+class Barbarian(AdventurerClass):
+    name: Literal[AdventurerClassType.BARBARIAN] = AdventurerClassType.BARBARIAN
     health_dice: int = 12
     is_enraged: bool = False
     is_frenzied: bool = False
@@ -206,4 +247,4 @@ class Barbarian(Class):
 # TODO: Implement Totem Warrior for Barbarian
 
 
-CLASSES = {ClassType.BARBARIAN: Barbarian()}
+CLASSES = {AdventurerClassType.BARBARIAN: Barbarian()}
