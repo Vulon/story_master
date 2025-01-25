@@ -6,3 +6,4 @@ venv/
 src/story_master.egg-info/
 
 **.pyc
+data/

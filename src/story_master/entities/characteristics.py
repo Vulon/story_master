@@ -262,9 +262,7 @@ At the start of combat, you roll for initiative using a Dexterity check.
 Initiative determines the turn order of creatures in the battle.
 """
 
-    ARMOR_CLASS: str = (
-        """Depending on the armor you wear, you can add your Dexterity modifier, or part of it, to your Armor Class."""
-    )
+    ARMOR_CLASS: str = """Depending on the armor you wear, you can add your Dexterity modifier, or part of it, to your Armor Class."""
 
     def get_when_characteristic_can_be_used(self) -> str:
         return Dexterity.USE_CONDITION

@@ -4,7 +4,6 @@ from story_master.entities.items.items import Item
 
 
 class Equipment(Item):
-
     length: int | None = None
     description: str = ""
 

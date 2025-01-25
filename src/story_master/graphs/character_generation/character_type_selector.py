@@ -5,7 +5,7 @@ from langchain.prompts import PromptTemplate
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import StrOutputParser
 from story_master.entities.character import CharacterType, CHARACTER_TYPE_TABLE
-from story_master.storage.map.map_model import Location
+from story_master.log import logger
 
 
 class CharacterTypeSelector:
@@ -49,15 +49,21 @@ class CharacterTypeSelector:
         self.chain = prompt | llm_model | StrOutputParser() | self.parse_output
 
     def parse_output(self, output: str) -> CharacterType:
-        print("Raw character type output", output)
-        output = output.replace("\n", " ").strip()
-        match = self.output_pattern.search(output)
-        raw_character_type = match.group(1).strip()
-        character_type = get_close_matches(raw_character_type, self.character_types)[0]
-        return CharacterType(character_type)
+        try:
+            output = output.replace("\n", " ").strip()
+            match = self.output_pattern.search(output)
+            raw_character_type = match.group(1).strip()
+            character_type = get_close_matches(
+                raw_character_type, self.character_types
+            )[0]
+            return CharacterType(character_type)
+        except Exception:
+            logger.error(f"CharacterTypeSelector. Failed to parse output: {output}")
+            return CharacterType.COMMONER
 
-    def generate(self, character_description: str, location: Location) -> CharacterType:
-        location_description = location.description
+    def generate(
+        self, character_description: str, location_description: str
+    ) -> CharacterType:
         character_type = self.chain.invoke(
             {
                 "character_description": character_description,

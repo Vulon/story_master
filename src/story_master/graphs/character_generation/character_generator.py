@@ -4,6 +4,7 @@ from difflib import get_close_matches
 from langchain.prompts import PromptTemplate
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import StrOutputParser
+from pydantic import BaseModel
 
 from story_master.entities.alignment import ALIGNMENTS, AlignmentType
 from story_master.entities.character import (
@@ -16,6 +17,7 @@ from story_master.entities.character import (
     Gender,
     calculate_bonus_from_characteristics,
 )
+from story_master.entities.races import Race
 import random
 from story_master.entities.items.items import Item, ItemStack
 from story_master.graphs.character_generation.background_generator import (
@@ -34,10 +36,22 @@ from story_master.graphs.character_generation.character_type_selector import (
 from story_master.entities.classes import (
     CivilianClass,
 )
-from story_master.storage.map.map_model import Location
+
 from story_master.graphs.character_generation.items_generator import (
     MerchantStockGenerator,
 )
+from story_master.storage.storage_manager import StorageManager
+from story_master.storage.summary import SummaryAgent
+from story_master.log import logger
+
+
+class BaseCharacterInfo(BaseModel):
+    race: Race
+    gender: Gender
+    age: int
+    alignment: AlignmentType
+    name: str
+    character_description: str
 
 
 class CharacterParameterGenerator:
@@ -82,21 +96,30 @@ class CharacterParameterGenerator:
         self.chain = prompt | llm_model | StrOutputParser() | self.parse_output
 
     def parse_output(self, output: str):
-        print("Raw output")
-        print(output)
-        raw_gender_match = self.gender_pattern.search(output)
-        raw_age_match = self.age_pattern.search(output)
-        raw_alignment_match = self.alignment_pattern.search(output)
-        gender = get_close_matches(
-            raw_gender_match.group(1).lower(), [item.value for item in GENDERS]
-        )[0]
-        age = int(raw_age_match.group(1))
-        alignment = get_close_matches(
-            raw_alignment_match.group(1).lower().capitalize(),
-            [item.value for item in ALIGNMENTS],
-        )[0]
-        gender = Gender(gender)
-        alignment = AlignmentType(alignment)
+        try:
+            raw_gender_match = self.gender_pattern.search(output)
+            gender = get_close_matches(
+                raw_gender_match.group(1).lower(), [item.value for item in GENDERS]
+            )[0]
+            gender = Gender(gender)
+
+            raw_age_match = self.age_pattern.search(output)
+            age = int(raw_age_match.group(1))
+
+            raw_alignment_match = self.alignment_pattern.search(output)
+            alignment = get_close_matches(
+                raw_alignment_match.group(1).lower().capitalize(),
+                [item.value for item in ALIGNMENTS],
+            )[0]
+            alignment = AlignmentType(alignment)
+        except Exception:
+            logger.error(
+                f"CharacterParameterGenerator. Could not parse output: {output}"
+            )
+            alignment = AlignmentType.TRUE_NEUTRAL
+            age = 25
+            gender = Gender.MALE
+
         return gender, age, alignment
 
     def create_genders_description(self) -> str:
@@ -129,8 +152,15 @@ def remove_duplicates(items: list[Item]) -> list[Item]:
 
 
 class CharacterGenerator:
-    def __init__(self, llm_model: BaseChatModel):
+    def __init__(
+        self,
+        llm_model: BaseChatModel,
+        summary_agent: SummaryAgent,
+        storage_manager: StorageManager,
+    ):
         self.llm_model = llm_model
+        self.summary_agent = summary_agent
+        self.storage_manager = storage_manager
         self.race_generator = RaceGenerator(self.llm_model)
         self.class_generator = AdventurerClassGenerator(self.llm_model)
         self.background_generator = BackgroundGenerator(self.llm_model)
@@ -145,31 +175,55 @@ class CharacterGenerator:
         for item in raw_items:
             item_quantities[item.name] += item.base_quantity
         item_stacks = {
-            name:
-            ItemStack(item=items_map[name], quantity=quantity)
+            name: ItemStack(item=items_map[name], quantity=quantity)
             for name, quantity in item_quantities.items()
         }
         return item_stacks
 
-    def _create_adventurer(self, character_description: str) -> Adventurer:
+    def _create_base_character_info(
+        self, character_description: str
+    ) -> BaseCharacterInfo:
         race = self.race_generator.generate(character_description)
         character_description += f"\n Race: {race.get_full_description()} \n"
-        class_object = self.class_generator.generate(character_description)
-        character_description += (
-            f"\n Class: {class_object.get_short_class_description()} \n"
+        character_description = self.summary_agent.get_summary(
+            "Extract any information that can help define character class, background, traits",
+            character_description,
         )
-        background = self.background_generator.generate(character_description)
-        character_description += f"\n Background: {background.description} \n"
 
         gender, age, alignment = self.character_parameter_generator.generate(
             character_description
         )
-        print("Picked parameters")
-        print(gender, age, alignment)
+        character_description += (
+            f"\n Sex: {gender}, Age: {age}, Alignment: {alignment} \n"
+        )
 
-        name = self.character_name_generator.generate(character_description, race.names)
-        print("Picked name")
-        print(name)
+        existing_names = self.storage_manager.get_existing_names(race.name)
+        name = self.character_name_generator.generate(
+            character_description, race.names, existing_names
+        )
+        character_description += f"\n Name: {name} \n"
+        return BaseCharacterInfo(
+            race=race,
+            gender=gender,
+            age=age,
+            alignment=alignment,
+            name=name,
+            character_description=character_description,
+        )
+
+    def _create_adventurer(self, character_description: str) -> Adventurer:
+        base_character_info = self._create_base_character_info(character_description)
+        race = base_character_info.race
+        gender = base_character_info.gender
+        age = base_character_info.age
+        alignment = base_character_info.alignment
+        name = base_character_info.name
+        character_description = base_character_info.character_description
+
+        class_object = self.class_generator.generate(character_description)
+        character_description += f"\n Class: {class_object.name} - {class_object.get_short_class_description()} \n"
+        background = self.background_generator.generate(character_description)
+
         strength = class_object.base_strength + race.strength_bonus
         agility = class_object.base_agility + race.agility_bonus
         constitution = class_object.base_constitution + race.constitution_bonus
@@ -236,23 +290,19 @@ class CharacterGenerator:
 
     def _create_commoner(self, character_description: str) -> Commoner:
         # TODO: dynamically generate items and tool proficiencies
-        race = self.race_generator.generate(character_description)
-        character_description += f"\n Race: {race.get_full_description()} \n"
+        base_character_info = self._create_base_character_info(character_description)
+        race = base_character_info.race
+        gender = base_character_info.gender
+        age = base_character_info.age
+        alignment = base_character_info.alignment
+        name = base_character_info.name
+        character_description = base_character_info.character_description
 
         class_object = CivilianClass()
         character_description += (
             f"\n Class: {class_object.get_short_class_description()} \n"
         )
 
-        gender, age, alignment = self.character_parameter_generator.generate(
-            character_description
-        )
-        print("Picked parameters")
-        print(gender, age, alignment)
-
-        name = self.character_name_generator.generate(character_description, race.names)
-        print("Picked name")
-        print(name)
         strength = class_object.base_strength + race.strength_bonus
         agility = class_object.base_agility + race.agility_bonus
         constitution = class_object.base_constitution + race.constitution_bonus
@@ -271,8 +321,6 @@ class CharacterGenerator:
         max_health = class_object.health_dice + calculate_bonus_from_characteristics(
             constitution
         )
-
-        # TODO: Implement level up mechanic
 
         character = Commoner(
             type=CharacterType.COMMONER,
@@ -299,28 +347,24 @@ class CharacterGenerator:
         return character
 
     def _create_merchant(
-        self, character_description: str, location: Location
+        self, character_description: str, location_description: str
     ) -> Merchant:
         # TODO: dynamically generate items
-        race = self.race_generator.generate(character_description)
-        character_description += f"\n Race: {race.get_full_description()} \n"
+        base_character_info = self._create_base_character_info(character_description)
+        race = base_character_info.race
+        gender = base_character_info.gender
+        age = base_character_info.age
+        alignment = base_character_info.alignment
+        name = base_character_info.name
+        character_description = base_character_info.character_description
 
         class_object = CivilianClass()
         character_description += (
             f"\n Class: {class_object.get_short_class_description()} \n"
         )
 
-        gender, age, alignment = self.character_parameter_generator.generate(
-            character_description
-        )
-        print("Picked parameters")
-        print(gender, age, alignment)
-
-        name = self.character_name_generator.generate(character_description, race.names)
-        print("Picked name")
-        print(name)
         raw_stock_items = self.merchant_stock_generator.generate(
-            character_description, location
+            character_description, location_description
         )
         stock_stacks = self._get_item_stacks(raw_stock_items)
 
@@ -369,20 +413,21 @@ class CharacterGenerator:
         return character
 
     def generate(
-        self, character_description: str, is_player: bool, location: Location
+        self, character_description: str, is_player: bool, location_description: str
     ) -> Character:
         if is_player:
             character_type = CharacterType.ADVENTURER
         else:
             character_type = self.character_type_selector.generate(
-                character_description, location
+                character_description, location_description
             )
-        print("Picked character type", str(character_type))
+
         if character_type == CharacterType.ADVENTURER:
             return self._create_adventurer(character_description)
         elif character_type == CharacterType.COMMONER:
             return self._create_commoner(character_description)
         elif character_type == CharacterType.MERCHANT:
-            return self._create_merchant(character_description, location)
+            return self._create_merchant(character_description, location_description)
         else:
-            raise ValueError(f"Unsupported character type: {character_type}")
+            logger.error(f"Unsupported character type: {character_type}")
+            return self._create_commoner(character_description)

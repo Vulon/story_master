@@ -4,6 +4,7 @@ from difflib import get_close_matches
 from langchain.prompts import PromptTemplate
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import StrOutputParser
+from story_master.log import logger
 
 from story_master.entities.races import RACES, Race, RaceType
 
@@ -11,7 +12,6 @@ output_pattern = re.compile(r"<Output>(.*)</Output>")
 
 
 class RaceGenerator:
-
     PROMPT = """
 You are a Dungeons and Dragons agent.
 
@@ -41,28 +41,26 @@ Output:
         self.default_race = RaceType.HILL_DWARF
 
     def generate(self, character_description: str) -> Race:
-        try:
-            races_description = self.create_races_description()
-            race_type = self.chain.invoke(
-                {
-                    "races_description": races_description,
-                    "character_description": character_description,
-                }
-            )
-            return RACES[race_type].model_copy()
-        except Exception as e:
-            print("Error while generating a race")
-            print(e)
-            return RACES[self.default_race].model_copy()
+        races_description = self.create_races_description()
+        race_type = self.chain.invoke(
+            {
+                "races_description": races_description,
+                "character_description": character_description,
+            }
+        )
+        return RACES[race_type].model_copy()
 
     def parse_output(self, output: str) -> RaceType:
-        print("Raw race output", output)
-        output = output.replace("\n", " ")
-        match = output_pattern.search(output)
-        parsed_string = get_close_matches(
-            match.group(1), [item.value for item in RACES.keys()]
-        )[0]
-        return RaceType(parsed_string)
+        try:
+            output = output.replace("\n", " ")
+            match = output_pattern.search(output)
+            parsed_string = get_close_matches(
+                match.group(1), [item.value for item in RACES.keys()]
+            )[0]
+            return RaceType(parsed_string)
+        except Exception:
+            logger.error(f"RaceGenerator. Failed to parse output: {output}")
+            return self.default_race
 
     def create_races_description(self) -> str:
         descriptions = []

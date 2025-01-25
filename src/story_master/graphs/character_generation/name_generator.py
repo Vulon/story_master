@@ -1,8 +1,10 @@
+import random
 import re
 
 from langchain.prompts import PromptTemplate
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import StrOutputParser
+from story_master.log import logger
 
 
 class CharacterNameGenerator:
@@ -36,12 +38,35 @@ class CharacterNameGenerator:
         self.chain = prompt | llm_model | StrOutputParser() | self.parse_output
 
     def parse_output(self, output: str) -> str:
-        match = self.output_pattern.search(output)
-        return match.group(1)
+        try:
+            match = self.output_pattern.search(output)
+            return match.group(1)
+        except Exception as e:
+            logger.error(f"CharacterNameGenerator. Failed to parse output: {output}")
+            raise e
 
-    def generate(self, character_description: str, available_names: list[str]) -> str:
-        names = "; ".join(available_names)
-        name = self.chain.invoke(
-            {"available_names": names, "character_description": character_description}
-        )
-        return name
+    def generate(
+        self,
+        character_description: str,
+        available_names: list[str],
+        existing_names: set[str],
+    ) -> str:
+        for existing_name in existing_names:
+            pair = existing_name.split()
+            available_names = [
+                name
+                for name in available_names
+                if pair[0] not in name and pair[-1] not in name
+            ]
+
+        available_names_string = "; ".join(available_names)
+        try:
+            name = self.chain.invoke(
+                {
+                    "available_names": available_names_string,
+                    "character_description": character_description,
+                }
+            )
+            return name
+        except Exception:
+            return random.choice(available_names)

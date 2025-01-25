@@ -7,9 +7,15 @@ from langchain_community.utils.math import cosine_similarity
 from langchain_core.embeddings import Embeddings
 
 from story_master.entities.character import ANY_CHARACTER
+from story_master.entities.races import RaceType
 from story_master.settings import Settings
 from story_master.storage.map.base_map import DEFAULT_MAP
-from story_master.storage.map.map_model import Location, Map
+from story_master.storage.map.map_model import (
+    DetailedArea,
+    LargeArea,
+    Map,
+    BaseLocation,
+)
 from story_master.storage.memory.memory_model import Observation
 from story_master.storage.storage_models import CharacterStorage, GameStorage, Sim
 
@@ -18,6 +24,7 @@ class StorageManager:
     def __init__(self, settings: Settings, embeddings_client: Embeddings):
         self.settings = settings
         self.embeddings_client = embeddings_client
+
         settings.characters_storage_path.parent.mkdir(parents=True, exist_ok=True)
         settings.map_storage_path.parent.mkdir(parents=True, exist_ok=True)
         settings.game_storage_path.parent.mkdir(parents=True, exist_ok=True)
@@ -46,10 +53,8 @@ class StorageManager:
                 current_time=self.settings.default_starting_time
             )
 
-    def get_location(self, location_id: int) -> Location:
-        return [
-            location for location in self.map.locations if location.id == location_id
-        ][0]
+    def get_location(self, location_id: int) -> DetailedArea | LargeArea:
+        return self.map.locations[location_id]
 
     def add_character(
         self, character: ANY_CHARACTER, is_player: bool, current_location_id: int
@@ -59,7 +64,9 @@ class StorageManager:
             max_id = max(self.character_storage.player_characters.keys())
         if self.character_storage.npc_characters:
             max_id = max(max_id, max(self.character_storage.npc_characters.keys()))
-        sim = Sim(id=max_id, character=character, current_location_id=current_location_id)
+        sim = Sim(
+            id=max_id, character=character, current_location_id=current_location_id
+        )
         if is_player:
             self.character_storage.player_characters[max_id + 1] = sim
         else:
@@ -67,7 +74,7 @@ class StorageManager:
         self.save_characters()
         return sim
 
-    def get_location_characters(self, location: Location) -> list[Sim]:
+    def get_location_characters(self, location: BaseLocation) -> list[Sim]:
         sims = []
         for id, sim in self.character_storage.player_characters.items():
             if sim.current_location_id == location.id:
@@ -76,13 +83,6 @@ class StorageManager:
             if sim.current_location_id == location.id:
                 sims.append(sim)
         return sims
-
-    def get_child_locations(self, location_id: int) -> list[Location]:
-        return [
-            location
-            for location in self.map.locations
-            if location.parent_location == location_id
-        ]
 
     def save_map(self):
         json_text = self.map.model_dump_json(indent=2)
@@ -149,3 +149,13 @@ class StorageManager:
         memories_string = " \n ".join(strings)
         return f"<Memory>{memories_string}</Memory>"
 
+    def get_existing_names(self, race: RaceType) -> set[str]:
+        return {
+            sim.character.name
+            for sim in self.character_storage.npc_characters.values()
+            if sim.character.race.name == race
+        } | {
+            sim.character.name
+            for sim in self.character_storage.player_characters.values()
+            if sim.character.race.name == race
+        }

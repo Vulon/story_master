@@ -5,15 +5,9 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import StrOutputParser
 
 from story_master.entities.character import Character
-from story_master.graphs.environment_generation.interior_generator import (
-    InteriorGenerator,
-)
 from story_master.settings import Settings
-from story_master.storage.map.map_model import Location
-from story_master.storage.memory.memory_model import Observation
 from story_master.storage.storage_models import Sim
 from story_master.storage.storage_manager import StorageManager
-
 
 
 class ObservationAgent:
@@ -63,10 +57,10 @@ class ObservationAgent:
     """
 
     def __init__(
-            self,
-            storage_manager: StorageManager,
-            llm_model: BaseChatModel,
-            settings: Settings,
+        self,
+        storage_manager: StorageManager,
+        llm_model: BaseChatModel,
+        settings: Settings,
     ):
         self.settings = settings
         self.storage_manager = storage_manager
@@ -86,7 +80,6 @@ class ObservationAgent:
         status_description = status_match.group(1) if status_match else None
         return title, content, importance, status_description
 
-
     def format_character_description(self, character: Character) -> str:
         lines = [
             f"Name: {character.name}",
@@ -98,23 +91,30 @@ class ObservationAgent:
 
     def run(self, sim: Sim, context: str):
         current_location = self.storage_manager.get_location(sim.current_location_id)
-        memories = self.storage_manager.get_memories(
-            context, sim
-        )
+        memories = self.storage_manager.get_memories(context, sim)
         memories_string = self.storage_manager.format_memories(memories)
         character_situation = sim.current_status or ""
         location_description = current_location.get_full_description()
         character_description = self.format_character_description(sim.character)
-        title, content, importance, status_description = self.chain.invoke({
-            "location_description": location_description,
-            "character_description": character_description,
-            "character_memories": memories_string,
-            "character_situation": character_situation,
-            "context": context,
-        })
+        title, content, importance, status_description = self.chain.invoke(
+            {
+                "location_description": location_description,
+                "character_description": character_description,
+                "character_memories": memories_string,
+                "character_situation": character_situation,
+                "context": context,
+            }
+        )
         if status_description:
             sim.current_status = status_description
-        print("New memory for", sim.character.name, "Title", title, "Content", content, "New status", status_description)
-        self.storage_manager.add_observation(
-            title, content, importance, sim
+        print(
+            "New memory for",
+            sim.character.name,
+            "Title",
+            title,
+            "Content",
+            content,
+            "New status",
+            status_description,
         )
+        self.storage_manager.add_observation(title, content, importance, sim)

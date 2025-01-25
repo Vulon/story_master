@@ -5,14 +5,11 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import StrOutputParser
 
 from story_master.entities.character import CharacterType
-from story_master.graphs.environment_generation.interior_generator import (
-    InteriorGenerator,
-)
 from story_master.storage.storage_models import Sim
-from story_master.settings import Settings
-from story_master.storage.map.map_model import Location
 from story_master.storage.memory.memory_model import Observation
 from story_master.storage.storage_manager import StorageManager
+from story_master.storage.summary import SummaryAgent
+
 
 class CharacterIdentifier:
     PROMPT = """
@@ -45,10 +42,8 @@ class CharacterIdentifier:
     ########
     Output:    
     """
-    def __init__(
-            self,
-            llm_model: BaseChatModel
-    ):
+
+    def __init__(self, llm_model: BaseChatModel):
         self.prompt = PromptTemplate.from_template(self.PROMPT)
         self.responder_pattern = re.compile(r"<Responder>(.*?)</Responder>")
         self.chain = self.prompt | llm_model | StrOutputParser()
@@ -76,19 +71,27 @@ class CharacterIdentifier:
         characters_string = "<Characters>" + "; ".join(strings) + "</Characters>"
         return characters_string
 
-    def run(self, main_sim: Sim, main_character_intention: str, sims: list[Sim]) -> Sim:
+    def run(
+        self,
+        main_sim: Sim,
+        main_character_intention: str,
+        sims: list[Sim],
+        memories_string: str,
+        character_description: str,
+    ) -> Sim:
         sims = [sim for sim in sims if sim.id != main_sim.id]
         characters_description = self.format_characters(sims)
-        main_character_description = self.format_character(main_sim.id, main_sim)
-        main_character_memory = self.format_memories(main_sim.memories)
-        raw_output = self.chain.invoke({
-            "characters_description": characters_description,
-            "main_character_intention": main_character_intention,
-            "main_character_description": main_character_description,
-            "main_character_memory": main_character_memory
-        })
+        raw_output = self.chain.invoke(
+            {
+                "characters_description": characters_description,
+                "main_character_intention": main_character_intention,
+                "main_character_description": character_description,
+                "main_character_memory": memories_string,
+            }
+        )
         responder = self.parse_output(raw_output, sims)
         return responder
+
 
 class DialogAgent:
     PROMPT = """
@@ -131,11 +134,13 @@ class DialogAgent:
     """
 
     def __init__(
-            self,
-            llm_model: BaseChatModel,
-            storage_manager: StorageManager,
+        self,
+        llm_model: BaseChatModel,
+        storage_manager: StorageManager,
+        summary_agent: SummaryAgent,
     ):
         self.storage_manager = storage_manager
+        self.summary_agent = summary_agent
         self.prompt = PromptTemplate.from_template(self.PROMPT)
         self.pattern = re.compile(r"<Response>(.*?)</Response>")
         self.chain = self.prompt | llm_model | StrOutputParser() | self.parse_output
@@ -162,28 +167,46 @@ class DialogAgent:
             lines.append(f"Background: {sim.character.background.get_description()}. ")
         return " ".join(lines)
 
-
-    def run(self, main_sim: Sim, main_character_intention: str) -> tuple[str, Sim]:
+    def run(
+        self,
+        main_sim: Sim,
+        main_character_intention: str,
+        memories_string: str,
+        character_description: str,
+        location_description: str,
+    ) -> tuple[str, Sim]:
         location = self.storage_manager.get_location(main_sim.current_location_id)
         location_characters = self.storage_manager.get_location_characters(location)
-        responder = self.character_identifier.run(main_sim, main_character_intention, location_characters)
 
-        main_character_description = self.format_character_description(main_sim)
-        main_character_memory = self.character_identifier.format_memories(main_sim.memories)
+        responder = self.character_identifier.run(
+            main_sim,
+            main_character_intention,
+            location_characters,
+            memories_string,
+            character_description,
+        )
 
-        dialog_responder_description = self.format_character_description(responder)
-        dialog_responder_memory = self.character_identifier.format_memories(responder.memories)
-        location_description = f"""<Location>
-        Name: {location.name}.
-        Description: {location.description}.
-        Interior: {location.interior}.</Location>"""
+        dialog_responder_description = self.summary_agent.summarize_character(
+            f"{responder.character.name} is responding to {main_sim.character.name}, who is saying: {main_character_intention}",
+            responder.character,
+        )
+        responder_memories = self.storage_manager.get_memories(
+            f"{main_sim.character.name} is saying: {main_character_intention}",
+            responder,
+        )
+        dialog_responder_memory = self.summary_agent.summarize_memories(
+            f"{responder.character.name} is responding to {main_sim.character.name}, who is saying: {main_character_intention}",
+            responder_memories,
+        )
 
-        response = self.chain.invoke({
-            "main_character_intention": main_character_intention,
-            "main_character_description": main_character_description,
-            "main_character_memory": main_character_memory,
-            "dialog_responder_description": dialog_responder_description,
-            "dialog_responder_memory": dialog_responder_memory,
-            "location_description": location_description
-        })
+        response = self.chain.invoke(
+            {
+                "main_character_intention": main_character_intention,
+                "main_character_description": character_description,
+                "main_character_memory": memories_string,
+                "dialog_responder_description": dialog_responder_description,
+                "dialog_responder_memory": dialog_responder_memory,
+                "location_description": location_description,
+            }
+        )
         return response, responder

@@ -7,7 +7,7 @@ class Item(BaseModel):
     weight: float = 0
     base_quantity: float = 1
 
+
 class ItemStack(BaseModel):
     item: Item
     quantity: float
-

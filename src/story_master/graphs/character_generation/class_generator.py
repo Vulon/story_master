@@ -4,10 +4,12 @@ from difflib import get_close_matches
 from langchain.prompts import PromptTemplate
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import StrOutputParser
+import random
 
 from story_master.entities.characteristics import SKILL_CONDITIONS, SkillType
 from story_master.entities.classes import CLASSES, AdventurerClass, AdventurerClassType
 from story_master.utils.selection import SomeOf
+from story_master.log import logger
 
 
 class ClassSelector:
@@ -55,30 +57,28 @@ class ClassSelector:
         return "; ".join([class_type.value for class_type in CLASSES.keys()])
 
     def parse_output(self, output: str) -> AdventurerClassType:
-        print("Raw adventurer class output", output)
-        output = output.replace("\n", " ")
-        match = self.output_pattern.search(output)
-        parsed_string = get_close_matches(
-            match.group(1), [item.value for item in CLASSES.keys()]
-        )[0]
-        return AdventurerClassType(parsed_string)
+        try:
+            output = output.replace("\n", " ")
+            match = self.output_pattern.search(output)
+            parsed_string = get_close_matches(
+                match.group(1), [item.value for item in CLASSES.keys()]
+            )[0]
+            return AdventurerClassType(parsed_string)
+        except Exception:
+            logger.error(f"ClassSelector. Failed to parse output: {output}")
+            return self.default_class
 
     def generate(self, character_description: str) -> AdventurerClassType:
-        try:
-            class_names = self.create_all_class_names()
-            class_descriptions = self.create_short_class_descriptions()
-            class_type = self.chain.invoke(
-                {
-                    "class_names": class_names,
-                    "class_descriptions": class_descriptions,
-                    "character_description": character_description,
-                }
-            )
-            return class_type
-        except Exception as e:
-            print("Error while generating a class")
-            print(e)
-            return self.default_class
+        class_names = self.create_all_class_names()
+        class_descriptions = self.create_short_class_descriptions()
+        class_type = self.chain.invoke(
+            {
+                "class_names": class_names,
+                "class_descriptions": class_descriptions,
+                "character_description": character_description,
+            }
+        )
+        return class_type
 
 
 class SkillSelector:
@@ -116,13 +116,17 @@ class SkillSelector:
         self.chain = prompt | llm_model | StrOutputParser() | self.parse_output
 
     def parse_output(self, output: str) -> list[SkillType]:
-        parsed_skills = []
-        for raw_skill in self.output_pattern.findall(output):
-            parsed_string = get_close_matches(
-                raw_skill, [item.value for item in SKILL_CONDITIONS.keys()]
-            )[0]
-            parsed_skills.append(SkillType(parsed_string))
-        return parsed_skills
+        try:
+            parsed_skills = []
+            for raw_skill in self.output_pattern.findall(output):
+                parsed_string = get_close_matches(
+                    raw_skill, [item.value for item in SKILL_CONDITIONS.keys()]
+                )[0]
+                parsed_skills.append(SkillType(parsed_string))
+            return parsed_skills
+        except Exception as e:
+            logger.error(f"SkillSelector. Failed to parse output: {output}")
+            raise e
 
     def create_skills_description(self, available_skills: list[SkillType]) -> str:
         descriptions = []
@@ -135,13 +139,16 @@ class SkillSelector:
         self, character_description: str, class_object: AdventurerClass, skills: SomeOf
     ) -> list[SkillType]:
         skills_description = self.create_skills_description(skills.items)
-        return self.chain.invoke(
-            {
-                "skills_amount": skills.count,
-                "skills_description": skills_description,
-                "character_description": character_description,
-            }
-        )
+        try:
+            return self.chain.invoke(
+                {
+                    "skills_amount": skills.count,
+                    "skills_description": skills_description,
+                    "character_description": character_description,
+                }
+            )
+        except Exception:
+            return random.choices(skills.items, k=skills.count)
 
 
 class AdventurerClassGenerator:
@@ -152,15 +159,11 @@ class AdventurerClassGenerator:
 
     def generate(self, character_description: str) -> AdventurerClass:
         class_type = self.class_selector.generate(character_description)
-        print("Selected class")
-        print(class_type)
         class_object = CLASSES[class_type].model_copy()
         if isinstance(class_object.skills, SomeOf):
             skills = self.skill_selector.generate(
                 character_description, class_object, class_object.skills
             )
-            print("Selected skills")
-            print(skills)
             class_object.skills = skills
 
         return class_object

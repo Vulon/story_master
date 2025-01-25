@@ -6,15 +6,9 @@ from langchain_core.output_parsers import StrOutputParser
 from datetime import timedelta
 
 from story_master.entities.items.resources import RESOURCES, Resource
-from story_master.graphs.environment_generation.interior_generator import (
-    InteriorGenerator,
-)
 from story_master.storage.storage_models import Sim
-from story_master.settings import Settings
-from story_master.storage.map.map_model import Location
 
 from story_master.storage.storage_manager import StorageManager
-from story_master.storage.storage_models import ResourceGatheredEvent
 from difflib import get_close_matches
 
 
@@ -66,19 +60,16 @@ class ResourceGatheringAgent:
     """
 
     def __init__(
-            self,
-            llm_model: BaseChatModel,
-            storage_manager: StorageManager,
+        self,
+        llm_model: BaseChatModel,
+        storage_manager: StorageManager,
     ):
         self.storage_manager = storage_manager
         self.prompt = PromptTemplate.from_template(self.PROMPT)
         self.resource_pattern = re.compile(r"<Resource>(.*?)</Resource>")
         self.amount_pattern = re.compile(r"<Amount>(.*?)</Amount>")
         self.time_pattern = re.compile(r"<Time>(.*?)</Time>")
-        self.list_of_resources = [
-            str(resource) for resource in
-            RESOURCES.keys()
-        ]
+        self.list_of_resources = [str(resource) for resource in RESOURCES.keys()]
         self.chain = self.prompt | llm_model | StrOutputParser() | self.parse_output
 
     def parse_output(self, output: str) -> tuple[Resource, float, timedelta]:
@@ -96,20 +87,21 @@ class ResourceGatheringAgent:
 
         return resource, amount, time
 
-
-    def run(self, sim: Sim, character_intentions: str):
-        location = self.storage_manager.get_location(sim.current_location_id)
-        memories = self.storage_manager.get_memories(character_intentions, sim)
-
-        memories_string = self.storage_manager.format_memories(memories)
-        location_description = location.get_full_description()
-        character_description = sim.character.get_description()
-
-        resource, amount, time = self.chain.invoke({
-            "character_intent": character_intentions,
-            "location_description": location_description,
-            "character_description": character_description,
-            "character_memories": memories_string,
-            "list_of_resources": self.list_of_resources,
-        })
+    def run(
+        self,
+        sim: Sim,
+        character_intentions: str,
+        memories_string: str,
+        character_description: str,
+        location_description: str,
+    ):
+        resource, amount, time = self.chain.invoke(
+            {
+                "character_intent": character_intentions,
+                "location_description": location_description,
+                "character_description": character_description,
+                "character_memories": memories_string,
+                "list_of_resources": self.list_of_resources,
+            }
+        )
         return resource, amount, time

@@ -24,7 +24,6 @@ class Resource(Item):
     gatherable: bool = True
 
 
-
 RESOURCES = {
     ResourceType.WOOD: Resource(
         name=ResourceType.WOOD,

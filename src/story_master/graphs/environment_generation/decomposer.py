@@ -3,8 +3,8 @@ import re
 from langchain.prompts import PromptTemplate
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import StrOutputParser
-
-from story_master.storage.map.map_model import Location
+from story_master.log import logger
+from story_master.storage.map.map_model import LargeArea
 
 
 class LocationDecomposer:
@@ -14,30 +14,30 @@ class LocationDecomposer:
     -Goal-
     Decompose a location into smaller locations.
     
+    Game map follows the tree structure, where the larger location is decomposed into smaller locations.
     Your location should be somewhere inside the Coast of Swords.
-    The time is the 15th Century DR.
     
     -Steps-
     1. Read the description of the larger location.
-    2. Read the names of existing locations in the same are as the larger location for the context.
+    2. Read the location tree hierarchy. It describes the relations from larger location all the way down to the current location
     3. Decompose the larger location into smaller locations.
         General areas like Faerûn have different regions like the Sword Coast.
         Regions have different settlements like Waterdeep.
-        Settlements have different districts like the Dock Ward.
+        Large settlements have different districts or wards.
         Districts or small settlements have different buildings like taverns, shops, etc.
         Don't output more than 5 smaller locations.
+        Don't decompose buildings into rooms, except for large buildings like castles.
+        Don't output the name of any location already present in the location tree hierarchy.
     4. Output the names of smaller locations in XML format
-        Format: <Location>First location</Location><Location>Second location</Location>        
-        Don't output the parent location.
+        Format: <Location>First location</Location><Location>Second location</Location>
         All smaller locations should be on the same level and be smaller than the parent location.
     All names should be in English
     
     -Large location description-
     {location_description}
     
-    -Neighbour large locations-
-    {neighbour_locations}
-    
+    -Location tree hierarchy-
+    {location_tree}    
     
     Output:
     """
@@ -49,18 +49,26 @@ class LocationDecomposer:
         self.chain = prompt | llm_model | StrOutputParser() | self.parse_output
 
     def parse_output(self, output: str) -> list[str]:
-        matches = self.pattern.findall(output)
-        return matches
+        try:
+            matches = self.pattern.findall(output)
+            return matches
+        except Exception as e:
+            logger.error(f"LocationDecomposer. Failed to parse output: {output}")
+            raise e
 
     def generate(
-        self, parent_location: Location, neighbour_location_names: list[str]
+        self, parent_location: LargeArea, location_tree_path: list[LargeArea]
     ) -> list[str]:
         location_description = parent_location.description
-        neighbour_locations = " ; ".join(neighbour_location_names)
+        tree_path_names = [location.name for location in location_tree_path]
+        location_tree_string = " -> ".join(tree_path_names)
         location_names = self.chain.invoke(
             {
                 "location_description": location_description,
-                "neighbour_locations": neighbour_locations,
+                "location_tree": location_tree_string,
             }
         )
+        location_names = [
+            name for name in location_names if name not in tree_path_names
+        ]
         return location_names

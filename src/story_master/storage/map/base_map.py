@@ -1,6 +1,6 @@
-from story_master.storage.map.map_model import Location, Map, Route, RouteType
+from story_master.storage.map.map_model import LargeArea, Map, Route, RouteType
 
-SWORD_COAST = Location(
+SWORD_COAST = LargeArea(
     id=0,
     name="The Sword Coast",
     description="""
@@ -16,11 +16,10 @@ Some guides considered it to begin south at Candlekeep and continued all the way
 though most other cartographers and writers shared the former opinion on the matter, designating the coastal lands north of Waterdeep as the separate Sword Coast North.
 Because much of the coastland was still relatively untamed wilderness, it was rich with game: rabbits and fowl including grouse, bustards, and rock doves, could be hunted in abundance
     """,
-    short_description="The Sword Coast is the region in western Faerûn that lay along the coast of the Sea of Swords and extends inward into to the vale.",
     parent_location=None,
 )
 
-BALDURS_GATE = Location(
+BALDURS_GATE = LargeArea(
     id=1,
     name="Baldur's Gate",
     description="""
@@ -46,11 +45,10 @@ maneuvering it through subterranean aqueducts that emptied it into massive ciste
 Despite the city's engineering and cleanliness, this continual rain led to regular growth of mildew accompanied by a musky smell that permeated the city's cellars.
 To abate the slippery stone streets, it was sometimes necessary to spread straw or gravel along the wet cobblestones
     """,
-    short_description="Baldur's Gate was a metropolis and city-state on the Sword Coast and Western Heartlands on the continent of Faerûn.",
     parent_location=SWORD_COAST.id,
 )
 
-TROLL_CLAWS = Location(
+TROLL_CLAWS = LargeArea(
     id=2,
     name="The Troll Claws",
     description="""
@@ -62,11 +60,10 @@ The Trollclaws were home to a seemingly inexhaustible population of trolls.
 Repeated attempts by mercenaries and adventuring bands to clear the area seemed to have little effect.
 A colony of these trolls regularly communicated with the trolls that inhabited the Trollbark Forest in the east.
     """,
-    short_description="The Trollclaws was a region of troll-infested hills along the Sword Coast",
     parent_location=SWORD_COAST.id,
 )
 
-FIELDS_OF_THE_DEAD = Location(
+FIELDS_OF_THE_DEAD = LargeArea(
     id=3,
     name="The Fields of The Dead",
     description="""
@@ -74,9 +71,9 @@ The Fields of the Dead was a region of grasslands and rolling hills in the Weste
 Centuries after the fighting, by the mid–14th century DR, bones still littered the field and cairns of the dead were everywhere.
 Now used for farming and ranching, plows occasionally turned up skeletons in rusting armor, weapons, and other detritus
     """,
-    short_description="The Fields of the Dead was a region of grasslands and rolling hills in the Western Heartlands.",
     parent_location=SWORD_COAST.id,
 )
+SWORD_COAST.sub_locations = [BALDURS_GATE.id, TROLL_CLAWS.id, FIELDS_OF_THE_DEAD.id]
 
 
 ROUTES = [
@@ -105,6 +102,12 @@ ROUTES = [
 
 
 DEFAULT_MAP = Map(
-    locations=[SWORD_COAST, BALDURS_GATE, TROLL_CLAWS, FIELDS_OF_THE_DEAD],
+    root_location=SWORD_COAST.id,
+    locations={
+        SWORD_COAST.id: SWORD_COAST,
+        BALDURS_GATE.id: BALDURS_GATE,
+        TROLL_CLAWS.id: TROLL_CLAWS,
+        FIELDS_OF_THE_DEAD.id: FIELDS_OF_THE_DEAD,
+    },
     routes=ROUTES,
 )

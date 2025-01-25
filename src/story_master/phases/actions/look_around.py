@@ -4,12 +4,7 @@ from langchain.prompts import PromptTemplate
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import StrOutputParser
 
-from story_master.graphs.environment_generation.interior_generator import (
-    InteriorGenerator,
-)
 from story_master.storage.storage_models import Sim
-from story_master.settings import Settings
-from story_master.storage.map.map_model import Location
 from story_master.storage.memory.memory_model import Observation
 from story_master.storage.storage_manager import StorageManager
 
@@ -62,7 +57,7 @@ class LookAroundAgent:
     """
 
     def __init__(
-            self,
+        self,
         llm_model: BaseChatModel,
         storage_manager: StorageManager,
     ):
@@ -94,19 +89,25 @@ class LookAroundAgent:
         characters_string = "<Characters>" + "; ".join(strings) + "</Characters>"
         return characters_string
 
-    def run(self, sim: Sim, character_intentions: str):
+    def run(
+        self,
+        sim: Sim,
+        character_intentions: str,
+        memories_string: str,
+        character_description: str,
+        location_description: str,
+    ):
         location = self.storage_manager.get_location(sim.current_location_id)
         location_characters = self.storage_manager.get_location_characters(location)
         characters_string = self.format_existing_characters(location_characters)
-        memories_string = self.format_memories(sim.memories)
         area_description = self.chain.invoke(
             {
-                "location_description": location.get_full_description(),
-                "character_description": sim.character.get_description(),
+                "location_description": location_description,
+                "character_description": character_description,
                 "character_memories": memories_string,
                 "character_situation": sim.current_status or "",
                 "character_intentions": character_intentions,
-                "existing_characters": characters_string
+                "existing_characters": characters_string,
             }
         )
         return area_description

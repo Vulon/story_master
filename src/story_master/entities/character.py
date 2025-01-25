@@ -12,7 +12,7 @@ from story_master.entities.characteristics import (
     SkillType,
 )
 from story_master.entities.classes import AdventurerClass, CivilianClass, CreatureClass
-from story_master.entities.items import Armor, Instrument, Item, WeaponType
+from story_master.entities.items import Armor, Instrument, WeaponType
 from story_master.entities.items.items import ItemStack
 from story_master.entities.perks import Perk
 from story_master.entities.races import Race

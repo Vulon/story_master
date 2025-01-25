@@ -4,6 +4,7 @@ from difflib import get_close_matches
 from langchain.prompts import PromptTemplate
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import StrOutputParser
+from story_master.log import logger
 
 
 class LocationSelector:
@@ -35,8 +36,12 @@ class LocationSelector:
         self.chain = prompt | llm_model | StrOutputParser() | self.parse_output
 
     def parse_output(self, output: str) -> str:
-        matches = self.pattern.search(output)
-        return matches.group(1)
+        try:
+            matches = self.pattern.search(output)
+            return matches.group(1)
+        except Exception as e:
+            logger.error(f"LocationSelector. Failed to parse output: {output}")
+            raise e
 
     def generate(self, location_names: list[str], location_description: str) -> str:
         locations = "\n".join(

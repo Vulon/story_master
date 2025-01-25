@@ -17,13 +17,16 @@ class Sim(BaseModel):
     current_status: str | None = None
     is_busy: bool = False
 
+
 class CharacterStorage(BaseModel):
     player_characters: dict[int, Sim] = dict()
     npc_characters: dict[int, Sim] = dict()
 
+
 class EventType(StrEnum):
     CHARACTER_ACTION = "character_action"
     RESOURCE_GATHERED = "resource_gathered"
+
 
 class GameEvent(BaseModel):
     timestamp: datetime
@@ -35,13 +38,14 @@ class CharacterAction(GameEvent):
     sim_id: int
     intent: str
 
+
 class ResourceGatheredEvent(GameEvent):
     type: Literal[EventType.RESOURCE_GATHERED] = EventType.RESOURCE_GATHERED
     sim_id: int
     resource: Resource
     quantity: float
 
+
 class GameStorage(BaseModel):
     current_time: datetime
     events_queue: list[GameEvent] = []
-

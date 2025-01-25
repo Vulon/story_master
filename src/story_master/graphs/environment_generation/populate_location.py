@@ -3,8 +3,7 @@ import re
 from langchain.prompts import PromptTemplate
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import StrOutputParser
-
-from story_master.storage.map.map_model import Location
+from story_master.log import logger
 from story_master.storage.storage_models import Sim
 
 
@@ -46,16 +45,16 @@ class LocationPopulationManager:
         self.chain = prompt | llm_model | StrOutputParser() | self.parse_output
 
     def parse_output(self, output: str) -> list[str]:
-        matches = self.pattern.findall(output)
-        return matches
+        try:
+            matches = self.pattern.findall(output)
+            return matches
+        except Exception as e:
+            logger.error("LocationPopulationManager. Error parsing output: output")
+            raise e
 
-    def generate(self, location: Location, location_sims: list[Sim]) -> list[str]:
-        location_description_lines = [
-            f"Location {location.name}. ",
-            f"{location.description}. ",
-            location.interior or "",
-        ]
-        location_description = " ".join(location_description_lines)
+    def generate(
+        self, location_description: str, location_sims: list[Sim]
+    ) -> list[str]:
         character_lines = []
         for sim in location_sims:
             character_description = f'{sim.character.name}: {sim.character.type}, Status: {sim.current_status or "Not defined"}'

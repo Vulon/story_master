@@ -8,6 +8,7 @@ from langchain_core.output_parsers import StrOutputParser
 
 from story_master.entities.background import BACKGROUNDS, Background, BackgroundType
 from story_master.utils.selection import SomeOf
+from story_master.log import logger
 
 
 class BackgroundChoiceSelector:
@@ -77,7 +78,9 @@ class BackgroundChoiceSelector:
         try:
             return self.parse_output(raw_output)
         except Exception:
-            print("Could not parse output:", raw_output)
+            logger.error(
+                f"BackgroundChoiceSelector. Could not parse output: {raw_output}"
+            )
             return random.choice(choices)
 
 
@@ -109,6 +112,7 @@ class BackgroundSelector:
         self.output_pattern = re.compile(r"<Output>(.*?)</Output>")
         prompt = PromptTemplate.from_template(self.PROMPT)
         self.chain = prompt | llm_model | StrOutputParser() | self.parse_output
+        self.background_names = [str(item.value) for item in BACKGROUNDS.keys()]
 
     def create_all_background_descriptions(self) -> str:
         descriptions = []
@@ -119,10 +123,12 @@ class BackgroundSelector:
         return "\n".join(descriptions)
 
     def parse_output(self, output: str) -> BackgroundType:
-        match = self.output_pattern.search(output)
-        parsed_string = get_close_matches(
-            match.group(1), [item.value for item in BACKGROUNDS.keys()]
-        )[0]
+        try:
+            match = self.output_pattern.search(output)
+            parsed_string = get_close_matches(match.group(1), self.background_names)[0]
+        except Exception:
+            logger.error(f"BackgroundSelector. Could not parse output: {output}")
+            parsed_string = random.choice(self.background_names)
         return BackgroundType(parsed_string)
 
     def generate(self, character_description: str):
@@ -174,11 +180,15 @@ class ItemSelector:
         self.chain = prompt | llm_model | StrOutputParser()
 
     def parse_output(self, output: str, clean_values: list[str]) -> list[str]:
-        raw_items = self.output_pattern.findall(output)
-        items = []
-        for raw_item in raw_items:
-            item = get_close_matches(raw_item, clean_values)[0]
-            items.append(item)
+        try:
+            raw_items = self.output_pattern.findall(output)
+            items = []
+            for raw_item in raw_items:
+                item = get_close_matches(raw_item, clean_values)[0]
+                items.append(item)
+        except Exception:
+            logger.error(f"ItemSelector. Could not parse output: {output}")
+            items = []
         return items
 
     def split_some_of(self, values: list) -> tuple[list[SomeOf], list]:
@@ -262,10 +272,8 @@ class BackgroundGenerator:
 
     def generate(self, character_description: str) -> Background:
         background_type = self.background_selector.generate(character_description)
-        print("Selected background:", background_type)
-
+        logger.info(f"Selected background: {background_type.value}")
         raw_background = BACKGROUNDS[background_type]
-
         background_description = (
             f"\n Background: {background_type.value}: {raw_background.description} \n"
         )
@@ -275,7 +283,6 @@ class BackgroundGenerator:
             raw_background, character_description
         )
 
-        print("Selecting tools")
         raw_background.tool_proficiencies = self.item_selector.generate(
             background_description,
             raw_background.tool_proficiencies,
@@ -283,7 +290,6 @@ class BackgroundGenerator:
         )
 
         background_description += f"\n Known tools: {[item.name for item in raw_background.tool_proficiencies]} \n"
-        print("Selecting equipment")
         raw_background.equipment = self.item_selector.generate(
             background_description,
             raw_background.equipment,
