@@ -3,7 +3,7 @@ from langchain_core.language_models.chat_models import BaseChatModel
 
 from story_master.storage.storage_manager import StorageManager
 from story_master.storage.summary import SummaryAgent
-from story_master.action_handling.parameter import Parameter
+from story_master.action_handling.parameter import Parameter, FilledParameter
 
 
 class Provider(ABC):
@@ -30,5 +30,5 @@ class Provider(ABC):
         pass
 
     @abstractmethod
-    def execute(self, **kwargs):
+    def execute(self, **kwargs) -> dict[str, FilledParameter]:
         pass

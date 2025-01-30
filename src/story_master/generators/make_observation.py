@@ -4,10 +4,9 @@ from langchain.prompts import PromptTemplate
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import StrOutputParser
 
-from story_master.entities.character import Character
-from story_master.settings import Settings
 from story_master.storage.storage_models import Sim
 from story_master.storage.storage_manager import StorageManager
+from story_master.log import logger
 
 
 class ObservationAgent:
@@ -60,9 +59,7 @@ class ObservationAgent:
         self,
         storage_manager: StorageManager,
         llm_model: BaseChatModel,
-        settings: Settings,
     ):
-        self.settings = settings
         self.storage_manager = storage_manager
         self.prompt = PromptTemplate.from_template(self.PROMPT)
         self.title_pattern = re.compile(r"<Title>(.*?)</Title>")
@@ -72,30 +69,35 @@ class ObservationAgent:
         self.chain = self.prompt | llm_model | StrOutputParser() | self.parse_output
 
     def parse_output(self, output: str) -> tuple[str, str, int, str | None]:
-        output = output.replace("\n", " ")
-        title = self.title_pattern.search(output).group(1)
-        content = self.content_pattern.search(output).group(1)
-        importance = int(self.importance_pattern.search(output).group(1))
-        status_match = self.status_pattern.search(output)
-        status_description = status_match.group(1) if status_match else None
-        return title, content, importance, status_description
+        try:
+            output = output.replace("\n", " ")
+            title = self.title_pattern.search(output).group(1)
+            content = self.content_pattern.search(output).group(1)
+            importance = int(self.importance_pattern.search(output).group(1))
+            status_match = self.status_pattern.search(output)
+            status_description = status_match.group(1) if status_match else None
+            return title, content, importance, status_description
+        except Exception as e:
+            logger.error(f"ObservationAgent. Failed to parse output: {output}")
+            raise e
 
-    def format_character_description(self, character: Character) -> str:
+    def format_character_description(self, sim: Sim) -> str:
         lines = [
-            f"Name: {character.name}",
-            f"Type: {character.type}",
-            f"Sex: {character.sex}",
-            f"Race: {character.race.name}",
+            f"ID: {sim.id}. ",
+            f"Name: {sim.character.name}. ",
+            f"Type: {sim.character.type}. ",
         ]
         return " ".join(lines)
 
-    def run(self, sim: Sim, context: str):
-        current_location = self.storage_manager.get_location(sim.current_location_id)
-        memories = self.storage_manager.get_memories(context, sim)
-        memories_string = self.storage_manager.format_memories(memories)
+    def run(
+        self,
+        sim: Sim,
+        context: str,
+        memories_string: str = "",
+        location_description: str = "",
+    ) -> None:
         character_situation = sim.current_status or ""
-        location_description = current_location.get_full_description()
-        character_description = self.format_character_description(sim.character)
+        character_description = self.format_character_description(sim)
         title, content, importance, status_description = self.chain.invoke(
             {
                 "location_description": location_description,
@@ -107,14 +109,5 @@ class ObservationAgent:
         )
         if status_description:
             sim.current_status = status_description
-        print(
-            "New memory for",
-            sim.character.name,
-            "Title",
-            title,
-            "Content",
-            content,
-            "New status",
-            status_description,
-        )
+
         self.storage_manager.add_observation(title, content, importance, sim)

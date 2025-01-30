@@ -7,16 +7,16 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import StrOutputParser
 
 from story_master.entities.items.items import ItemStack
-from story_master.graphs.environment_generation.interior_generator import (
+from story_master.generators.environment_generation.interior_generator import (
     InteriorManager,
 )
-from story_master.phases.actions.dialog import DialogAgent
+
 from story_master.phases.actions.gather_resources import ResourceGatheringAgent
 from story_master.settings import Settings
 from story_master.storage.map.map_model import DetailedArea
 from story_master.storage.storage_manager import StorageManager
 from story_master.phases.actions.look_around import LookAroundAgent
-from story_master.phases.actions.make_observation import ObservationAgent
+from story_master.generators.make_observation import ObservationAgent
 from story_master.storage.storage_models import (
     Sim,
     CharacterAction,
@@ -153,8 +153,7 @@ class ExplorationManager:
 
         self.interior_manager = InteriorManager(llm_model)
         self.look_around_agent = LookAroundAgent(llm_model, storage_manager)
-        self.dialog_agent = DialogAgent(llm_model, storage_manager, summary_agent)
-        self.observation_agent = ObservationAgent(storage_manager, llm_model, settings)
+        self.observation_agent = ObservationAgent(storage_manager, llm_model)
         self.resource_gathering_agent = ResourceGatheringAgent(
             llm_model, storage_manager
         )
@@ -318,5 +317,20 @@ class ExplorationManager:
 # Complete quests
 # Investigate locations
 # Perform skill checks
-
 # Create lore system
+
+
+# Object interactions
+# Investigate
+# Activate trigger
+# Destroy object
+# Pick an object
+# Harvest object for resources
+
+
+# Character interactions
+# Dialog
+# Trade
+# Service
+# Teaching a skill
+# Relationship building

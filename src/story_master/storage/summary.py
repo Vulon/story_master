@@ -8,6 +8,7 @@ from story_master.entities.character import Character
 from story_master.storage.map.map_model import BaseLocation
 from story_master.storage.memory.memory_model import Observation
 from story_master.storage.storage_manager import StorageManager
+from story_master.log import logger
 
 
 class SummaryAgent:
@@ -43,12 +44,13 @@ class SummaryAgent:
         self.chain = self.prompt | llm_model | StrOutputParser() | self.parse_output
 
     def parse_output(self, output: str):
-        print("Raw summary output", output)
-        output = output.replace("\n", " ")
-        match = self.pattern.search(output)
-        if match:
+        try:
+            output = output.replace("\n", " ")
+            match = self.pattern.search(output)
             return match.group(1)
-        return None
+        except Exception:
+            logger.error(f"SummaryAgent. Could not parse: {output}")
+            return None
 
     def get_summary(self, context: str, information: str):
         summary = self.chain.invoke(

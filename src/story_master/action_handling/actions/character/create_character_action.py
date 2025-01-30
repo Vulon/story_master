@@ -1,5 +1,5 @@
 from story_master.action_handling.actions.action import Action
-from story_master.graphs.character_generation.character_generator import (
+from story_master.generators.character_generation.character_generator import (
     CharacterGenerator,
 )
 from langchain_core.language_models.chat_models import BaseChatModel

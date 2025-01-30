@@ -83,6 +83,7 @@ class ObjectGenerator:
         name: str - the name of the object
         description: str - a detailed description of the object
         dimensions: tuple[int, int] - the size of the object in the 2D grid in meters. The smallest object has dimensions of 1x1 meters.
+        hidden_description : str - a description of the object, that isn't visible until the object is investigated. You can omit this property if the object doesn't have a hidden description.
     
     -Location description-
     {location_description}
@@ -91,10 +92,14 @@ class ObjectGenerator:
     {object_names}
     
     -Output format-
-    (object_name, object_description, width, length),
-    (object_name, object_description, width, length)
+<object>
+    <name>Object name</name>
+    <description>Object description</description>
+    <dimensions>Width * Length</dimensions>
+    <hidden_description>Object hidden description</hidden_description> (if exists)
+</object>
     
-    Output every object on a separate line. Objects should be separated by a comma and enclosed in parentheses.
+    Output every object in a separate <object> tag
     
     Output:
     """
@@ -102,10 +107,16 @@ class ObjectGenerator:
     def __init__(self, llm_model: BaseChatModel):
         self.llm_model = llm_model
         prompt = PromptTemplate.from_template(self.PROMPT)
-        self.object_pattern = re.compile(r"\((.*?)\)")
+        self.object_pattern = re.compile(r"<object>(.*?)</object>")
+        self.name_pattern = re.compile(r"<name>(.*?)</name>")
+        self.description_pattern = re.compile(r"<description>(.*?)</description>")
+        self.dimensions_pattern = re.compile(r"<dimensions>(.*?)</dimensions>")
+        self.hidden_description_pattern = re.compile(
+            r"<hidden_description>(.*?)</hidden_description>"
+        )
         self.chain = prompt | llm_model | StrOutputParser() | self.parse_output
 
-    def parse_output(self, output: str) -> list[tuple[str, str, int, int]]:
+    def parse_output(self, output: str) -> list[tuple[str, str, int, int, str]]:
         try:
             output = output.replace("\n", " ")
             raw_objects = self.object_pattern.findall(output)
@@ -115,12 +126,19 @@ class ObjectGenerator:
         objects = []
         for raw_object in raw_objects:
             try:
-                text_items = raw_object.split(",")
-                name = text_items[0].strip()
-                length = text_items[-1]
-                width = text_items[-2]
-                description = ",".join(text_items[1:-2]).strip()
-                objects.append((name, description, int(width), int(length)))
+                name = self.name_pattern.search(raw_object).group(1)
+                description = self.description_pattern.search(raw_object).group(1)
+                dimensions = self.dimensions_pattern.search(raw_object).group(1)
+                width, length = map(int, dimensions.split("*"))
+                hidden_description_match = self.hidden_description_pattern.search(
+                    raw_object
+                )
+                hidden_description = (
+                    hidden_description_match.group(1)
+                    if hidden_description_match
+                    else None
+                )
+                objects.append((name, description, width, length, hidden_description))
             except Exception:
                 logger.error(f"ObjectGenerator. Failed to parse object: {raw_object}")
                 continue
@@ -143,7 +161,7 @@ class ObjectGenerator:
             raw_objects.extend(raw_objects_batch)
         objects = []
         for i, values in enumerate(raw_objects):
-            name, description, width, length = values
+            name, description, width, length, hidden_description = values
             objects.append(
                 EnvironmentPart(
                     id=i,
@@ -151,6 +169,7 @@ class ObjectGenerator:
                     description=description,
                     position=(0, 0),
                     dimensions=(width, length),
+                    hidden_description=hidden_description,
                 )
             )
         return objects

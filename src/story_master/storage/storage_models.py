@@ -13,7 +13,7 @@ class Sim(BaseModel):
     id: int
     character: ANY_CHARACTER
     memories: list[Observation | Reflection] = []
-    current_location_id: int | None = None
+    current_location_id: int
     current_status: str | None = None
     is_busy: bool = False
 

@@ -61,6 +61,10 @@ class Character(BaseModel, ABC):
     def get_description(self) -> str:
         pass
 
+    @abstractmethod
+    def get_worker_description(self) -> str:
+        pass
+
 
 class Adventurer(Character):
     type: Literal[CharacterType.ADVENTURER]
@@ -96,7 +100,18 @@ class Adventurer(Character):
             f"Perks: <Perks>{'; '.join([perk.get_full_description() for perk in self.perks])}</Perks>",
             "</Adventurer>",
         ]
-        return "\n".join(lines)
+        return " ".join(lines)
+
+    def get_worker_description(self) -> str:
+        lines = [
+            "<Adventurer>",
+            f"Name: {self.name}",
+            f"Age: {self.age}",
+            f"Class: {self.klass.get_short_class_description()}",
+            f"Tool proficiencies: <Tools>{'; '.join([f"{tool.name} - {tool.description}" for tool in self.tool_proficiencies])}</Tools>",
+            "</Adventurer>",
+        ]
+        return " ".join(lines)
 
 
 class Commoner(Character):
@@ -122,7 +137,18 @@ class Commoner(Character):
             f"Money: {self.money}",
             "</Commoner>",
         ]
-        return "\n".join(lines)
+        return " ".join(lines)
+
+    def get_worker_description(self) -> str:
+        lines = [
+            "<Commoner>",
+            f"Name: {self.name}",
+            f"Age: {self.age}",
+            f"Class: {self.klass.get_short_class_description()}",
+            f"Tool proficiencies: <Tools>{'; '.join([f"{tool.name} - {tool.description}" for tool in self.tool_proficiencies])}</Tools>",
+            "</Commoner>",
+        ]
+        return " ".join(lines)
 
 
 class Merchant(Character):
@@ -144,11 +170,21 @@ class Merchant(Character):
             f"Class: {self.klass.get_short_class_description()}",
             f"Level: {self.level}",
             f"Items: <Items>{'; '.join([f'{stack.item.name} x {stack.quantity}' for stack in self.items.values()])}</Items>",
-            f"Stock for sale: <Stock>{'; '.join([f'{stack.item.name} x {stack.quantity}' for stack in self.stock])}</Stock>",
+            f"Stock for sale: <Stock>{'; '.join([f'{stack.item.name} x {stack.quantity}' for stack in self.stock.values()])}</Stock>",
             f"Money: {self.money}",
             "</Merchant>",
         ]
-        return "\n".join(lines)
+        return " ".join(lines)
+
+    def get_worker_description(self) -> str:
+        lines = [
+            "<Merchant>",
+            f"Name: {self.name}",
+            f"Age: {self.age}",
+            f"Class: {self.klass.get_short_class_description()}",
+            "</Merchant>",
+        ]
+        return " ".join(lines)
 
 
 class Creature(Character):
@@ -170,7 +206,17 @@ class Creature(Character):
             f"Perks: <Perks>{'; '.join([perk.get_full_description() for perk in self.perks])}</Perks>",
             "</Creature>",
         ]
-        return "\n".join(lines)
+        return " ".join(lines)
+
+    def get_worker_description(self) -> str:
+        lines = [
+            "<Creature>",
+            f"Name: {self.name}",
+            f"Age: {self.age}",
+            f"Class: {self.klass.get_short_class_description()}",
+            "</Creature>",
+        ]
+        return " ".join(lines)
 
 
 ANY_CHARACTER = Adventurer | Commoner | Merchant | Creature

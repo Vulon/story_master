@@ -36,6 +36,7 @@ class EnvironmentPart(BaseModel):
     id: int
     name: str
     description: str
+    hidden_description: str | None
     position: tuple[int, int]
     dimensions: tuple[int, int]
 

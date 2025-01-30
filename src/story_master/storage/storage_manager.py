@@ -64,13 +64,14 @@ class StorageManager:
             max_id = max(self.character_storage.player_characters.keys())
         if self.character_storage.npc_characters:
             max_id = max(max_id, max(self.character_storage.npc_characters.keys()))
+        max_id += 1
         sim = Sim(
             id=max_id, character=character, current_location_id=current_location_id
         )
         if is_player:
-            self.character_storage.player_characters[max_id + 1] = sim
+            self.character_storage.player_characters[max_id] = sim
         else:
-            self.character_storage.npc_characters[max_id + 1] = sim
+            self.character_storage.npc_characters[max_id] = sim
         self.save_characters()
         return sim
 
@@ -159,3 +160,10 @@ class StorageManager:
             for sim in self.character_storage.player_characters.values()
             if sim.character.race.name == race
         }
+
+    def clear_memories(self):
+        for sim in self.character_storage.player_characters.values():
+            sim.memories = []
+        for sim in self.character_storage.npc_characters.values():
+            sim.memories = []
+        self.save_characters()

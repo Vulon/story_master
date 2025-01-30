@@ -20,24 +20,24 @@ from story_master.entities.character import (
 from story_master.entities.races import Race
 import random
 from story_master.entities.items.items import Item, ItemStack
-from story_master.graphs.character_generation.background_generator import (
+from story_master.generators.character_generation.background_generator import (
     BackgroundGenerator,
 )
-from story_master.graphs.character_generation.class_generator import (
+from story_master.generators.character_generation.class_generator import (
     AdventurerClassGenerator,
 )
-from story_master.graphs.character_generation.race_generator import RaceGenerator
-from story_master.graphs.character_generation.name_generator import (
+from story_master.generators.character_generation.race_generator import RaceGenerator
+from story_master.generators.character_generation.name_generator import (
     CharacterNameGenerator,
 )
-from story_master.graphs.character_generation.character_type_selector import (
+from story_master.generators.character_generation.character_type_selector import (
     CharacterTypeSelector,
 )
 from story_master.entities.classes import (
     CivilianClass,
 )
 
-from story_master.graphs.character_generation.items_generator import (
+from story_master.generators.character_generation.items_generator import (
     MerchantStockGenerator,
 )
 from story_master.storage.storage_manager import StorageManager
