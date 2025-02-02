@@ -73,16 +73,6 @@ class ResponderCharacterProvider(Provider):
             )
             raise e
 
-    def format_character(self, sim: Sim) -> str:
-        return f"(ID: {sim.id}. {sim.character.get_worker_description()})"
-
-    def format_characters(self, sims: list[Sim]) -> str:
-        strings = []
-        for sim in sims:
-            strings.append(self.format_character(sim))
-        characters_string = "<Characters>" + "; ".join(strings) + "</Characters>"
-        return characters_string
-
     def get_description(self) -> str:
         return "Identify the character, who is the target for main character's action."
 
@@ -96,6 +86,10 @@ class ResponderCharacterProvider(Provider):
                 name="actor_character_id",
                 description="The main character, who makes the action",
             ),
+            "location_id": Parameter(
+                name="location_id",
+                description="The ID of the location, where the main character is",
+            ),
         }
 
     def get_output_parameters(self) -> dict[str, Parameter]:
@@ -107,20 +101,24 @@ class ResponderCharacterProvider(Provider):
         }
 
     def execute(
-        self, intent: str, actor_character_id: int, **kwargs
+        self, intent: str, actor_character_id: int, location_id: int, **kwargs
     ) -> dict[str, FilledParameter]:
         actor = self.storage_manager.get_sim(actor_character_id)
-        location = self.storage_manager.get_location(actor.current_location_id)
-        sims = self.storage_manager.get_location_characters(location)
-        sims = [sim for sim in sims if sim.id != actor_character_id]
         actor_memories = self.storage_manager.get_memories(intent, actor)
         actor_memory_description = self.summary_agent.summarize_memories(
             f"Information that can be used to find the target character for intent: {intent}",
             actor_memories,
         )
+        location_sims_information = self.storage_manager.get_character_descriptions(
+            location_id, actor_character_id
+        )
+        sims = [sim for sim, _ in location_sims_information]
 
-        location_character_description = self.format_characters(sims)
-        actor_description = self.format_character(actor)
+        lines = []
+        for sim, character_description in location_sims_information:
+            lines.append(f"(ID: {sim.id}, description: {character_description})")
+        location_character_description = "\n".join(lines)
+        actor_description = f"Name: {actor.character.name} - {actor.character.get_stranger_description()}. Status: {actor.current_status}"
 
         raw_llm_output = self.chain.invoke(
             {
@@ -137,5 +135,5 @@ class ResponderCharacterProvider(Provider):
                 name="responder_character_id",
                 value=responder.id,
                 description="The ID of the character, who is the target for the main character's action",
-            )
+            ),
         }

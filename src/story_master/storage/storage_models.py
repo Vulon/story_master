@@ -16,6 +16,30 @@ class Sim(BaseModel):
     current_location_id: int
     current_status: str | None = None
     is_busy: bool = False
+    character_relations: dict[int, str] = dict()
+    object_memories_table: dict[int, dict[int, str]] = dict()
+
+    def get_object_memory(self, location_id: int, object_id: int) -> str | None:
+        if location_id in self.object_memories_table:
+            if object_id in self.object_memories_table[location_id]:
+                return self.object_memories_table[location_id][object_id]
+        return None
+
+    def set_object_memory(self, location_id: int, object_id: int, memory: str):
+        if location_id not in self.object_memories_table:
+            self.object_memories_table[location_id] = dict()
+        self.object_memories_table[location_id][object_id] = memory
+
+    def add_object_memory(self, location_id: int, object_id: int, memory: str):
+        existing_memory = self.get_object_memory(location_id, object_id)
+        if existing_memory:
+            memory = f"{existing_memory}. {memory}"
+        self.set_object_memory(location_id, object_id, memory)
+
+    def delete_object_memory(self, location_id: int, object_id: int):
+        if location_id in self.object_memories_table:
+            if object_id in self.object_memories_table[location_id]:
+                del self.object_memories_table[location_id][object_id]
 
 
 class CharacterStorage(BaseModel):

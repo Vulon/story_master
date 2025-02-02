@@ -6,6 +6,9 @@ from story_master.generators.character_generation.character_generator import (
     CharacterGenerator,
 )
 from story_master.generators.environment_generation.decomposer import LocationDecomposer
+from story_master.generators.environment_generation.interior_generator import (
+    InteriorManager,
+)
 from story_master.generators.environment_generation.location_generator import (
     LocationGenerator,
 )
@@ -15,6 +18,7 @@ from story_master.generators.environment_generation.draft_location_selector impo
 from story_master.generators.environment_generation.route_generator import (
     RouteGenerator,
 )
+from story_master.log import logger
 from story_master.settings import Settings
 from story_master.storage.map.map_model import LargeArea, DetailedArea
 from story_master.generators.environment_generation.populate_location import (
@@ -43,6 +47,7 @@ class GameInitializer:
         )
         self.route_generator = RouteGenerator(llm_model)
         self.population_manager = LocationPopulationManager(llm_model)
+        self.interior_manager = InteriorManager(llm_model)
 
     def pick_starting_location(self) -> LargeArea | DetailedArea:
         game_map = self.storage_manager.map.locations
@@ -87,6 +92,15 @@ class GameInitializer:
             else:
                 available_locations = child_locations
             iteration_counter += 1
+
+    def generate_interior(self, location: DetailedArea) -> DetailedArea:
+        location_summary = self.summary_agent.summarize_location(
+            "Extract any information that can be relevant to the interior or object details, like doors, chests, trees, ...",
+            location,
+        )
+        grid_objects = self.interior_manager.generate_interior(location_summary)
+        location.environment_parts = grid_objects
+        return location
 
     def initialize_game(self):
         player_id = self.settings.main_player_id
@@ -137,3 +151,10 @@ class GameInitializer:
                 main_player
             )
             self.storage_manager.save_characters()
+        main_player = self.storage_manager.get_sim(player_id)
+        location = self.storage_manager.get_location(main_player.current_location_id)
+
+        if not location.environment_parts:
+            logger.info("Generating interior")
+            location = self.generate_interior(location)
+            self.storage_manager.save_map()

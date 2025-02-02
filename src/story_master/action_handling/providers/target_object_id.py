@@ -27,6 +27,7 @@ class TargetObjectProvider(Provider):
     4. If the action is related to a character, read the description of the character.
     5. Find the object, which is the target for the provided action or intent.
     6. Output the ID of the target object.
+    If you can't find the target object, don't output XML tags, just write "Could not find the target object" or similar.
     
     -Intent-
     {intent}
@@ -42,6 +43,8 @@ class TargetObjectProvider(Provider):
     
     -Output format-
     <Object> Object ID (int) </Object>    
+    
+    Output:
     """
 
     def __init__(
@@ -64,17 +67,9 @@ class TargetObjectProvider(Provider):
             object_string = re.search(r"(\d+)", object_string).group(1)
             object_id = int(object_string)
             return [obj for obj in objects if obj.id == object_id][0]
-        except Exception as e:
+        except Exception:
             logger.error(f"TargetObjectProvider. Could not parse: {output}")
-            raise e
-
-    def format_objects(self, objects: list[EnvironmentPart]) -> str:
-        return " ; ".join(
-            [
-                f"({obj.id}: {obj.name}, {obj.description}, {obj.position})"
-                for obj in objects
-            ]
-        )
+            return None
 
     def get_description(self) -> str:
         return "Identify the target object for the provided action or intent"
@@ -84,6 +79,10 @@ class TargetObjectProvider(Provider):
             "intent": Parameter(
                 name="intent",
                 description="The intent for the action",
+            ),
+            "actor_character_id": Parameter(
+                name="actor_character_id",
+                description="The main character, who makes the action",
             ),
             "location_id": Parameter(
                 name="location_id",
@@ -106,33 +105,55 @@ class TargetObjectProvider(Provider):
         actor_character_id: int | None = None,
         **kwargs,
     ) -> dict[str, FilledParameter]:
+        actor = self.storage_manager.get_sim(actor_character_id)
         location = self.storage_manager.get_location(location_id)
         location_description = self.summary_agent.get_summary(
             f"Extract information that can be useful for identifying the target object for the following intent: {intent}",
             f"Location description: {location.name}: {location.description}",
         )
         objects = location.environment_parts
-        objects_description = self.format_objects(objects)
-        if actor_character_id is not None:
-            actor = self.storage_manager.get_sim(actor_character_id)
-            character_description = (
-                f"Character description: {actor.character.get_worker_description()}"
+        object_descriptions = []
+        for obj in objects:
+            if (
+                object_memory := actor.get_object_memory(location.id, obj.id)
+            ) is not None:
+                object_description = f"{obj.description}. {object_memory}"
+            else:
+                object_description = obj.description
+            object_descriptions.append(
+                f"(ID: {obj.id} - {obj.name}, {object_description}, position: {obj.position})"
             )
-        else:
-            character_description = "Character not provided"
-        object_id = self.chain.invoke(
+
+        character_description = (
+            f"Character description: {actor.character.get_worker_description()}"
+        )
+
+        raw_chain_output = self.chain.invoke(
             {
                 "intent": intent,
                 "location_description": location_description,
-                "objects_description": objects_description,
+                "objects_description": object_descriptions,
                 "character_description": character_description,
             }
         )
-        target_object = self.parse_output(object_id, objects)
-        return {
-            "target_object_id": FilledParameter(
-                name="target_object_id",
-                value=target_object.id,
-                description="The ID of the target object for the provided action or intent",
+        target_object = self.parse_output(raw_chain_output, objects)
+        if target_object is not None:
+            logger.info(
+                f"Selected target object {target_object.name} {target_object.description}"
             )
-        }
+            return {
+                "target_object_id": FilledParameter(
+                    name="target_object_id",
+                    value=target_object.id,
+                    description="The ID of the target object for the provided action or intent",
+                )
+            }
+        else:
+            logger.info("Could not find the target object")
+            return {
+                "target_object_id": FilledParameter(
+                    name="target_object_id",
+                    value=None,
+                    description="The ID of the target object for the provided action or intent",
+                )
+            }

@@ -1,5 +1,4 @@
 from story_master.llm_client import get_client, get_embeddings_client
-from story_master.phases.exploration import ExplorationManager
 from story_master.phases.game_start import GameInitializer
 from story_master.settings import Settings
 from story_master.storage.storage_manager import StorageManager
@@ -24,9 +23,6 @@ class Engine:
         self.game_initializer = GameInitializer(
             self.summary_agent, self.storage_manager, self.client, self.settings
         )
-        self.exploration_manager = ExplorationManager(
-            self.storage_manager, self.client, self.settings, self.summary_agent
-        )
 
     def run(self):
         self.game_initializer.initialize_game()
@@ -41,31 +37,28 @@ class Engine:
 
         self.storage_manager.clear_memories()
 
+        # TODO: Add interior generation for character actions
+
         # self.action_handler.handle(
         #     ActionType.CREATE_CHARACTER,
         #     "Create a commoner character, that lives here",
         #     character_id=main_player.id
         # )
         #
+        # self.action_handler.handle(
+        #     ActionType.DIALOG,
+        #     "I want to talk to the old mountain dwarf commoner: 'Hello, I am Taklinn. I am new here. Can you tell me about this place?'",
+        #     character_id=main_player.id,
+        # )
+
+        # self.action_handler.handle(
+        #     ActionType.INVESTIGATE_OBJECT,
+        #     "I want to investigate the bed",
+        #     character_id=main_player.id,
+        # )
+
         self.action_handler.handle(
-            ActionType.DIALOG,
-            "I want to ask Gardain the merchant about latest news here. How safe this place is.",
+            ActionType.HARVEST_RESOURCES,
+            "I want to break the bed and get some wood",
             character_id=main_player.id,
         )
-
-        # while True:
-        #     if len(events_queue) == 0:
-        #         player_action = CharacterAction(
-        #             sim_id=main_player.id,
-        #             intent=input("Enter next action "),
-        #             timestamp=self.storage_manager.game_storage.current_time
-        #             + timedelta(minutes=1),
-        #         )
-        #         events_queue.append(player_action)
-        #     events_queue = sorted(events_queue, key=lambda x: x.timestamp)
-        #     event = events_queue.pop(0)
-        #
-        #     if isinstance(event, CharacterAction):
-        #         self.exploration_manager.process_character_action(event)
-        #     elif isinstance(event, ResourceGatheredEvent):
-        #         self.exploration_manager.process_gathering_event(event)

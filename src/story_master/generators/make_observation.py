@@ -31,10 +31,6 @@ class ObservationAgent:
         Format: <Title>Title</Title>
                 <Content>Content</Content>
                 <Importance>Importance</Importance>
-    8. Update character's status: 
-        Read existing character situation and update it with the new information.
-        Output the new character situation in XML format.
-        Format: <CharacterStatus>Character situation</CharacterStatus>
     
     -Location description-
     {location_description}
@@ -45,8 +41,6 @@ class ObservationAgent:
     -Character memories-
     {character_memories}
     
-    -Character situation-
-    {character_situation}
     
     -Context-
     {context}
@@ -65,18 +59,15 @@ class ObservationAgent:
         self.title_pattern = re.compile(r"<Title>(.*?)</Title>")
         self.content_pattern = re.compile(r"<Content>(.*?)</Content>")
         self.importance_pattern = re.compile(r"<Importance>(.*?)</Importance>")
-        self.status_pattern = re.compile(r"<CharacterStatus>(.*?)</CharacterStatus>")
         self.chain = self.prompt | llm_model | StrOutputParser() | self.parse_output
 
-    def parse_output(self, output: str) -> tuple[str, str, int, str | None]:
+    def parse_output(self, output: str) -> tuple[str, str, int]:
         try:
             output = output.replace("\n", " ")
             title = self.title_pattern.search(output).group(1)
             content = self.content_pattern.search(output).group(1)
             importance = int(self.importance_pattern.search(output).group(1))
-            status_match = self.status_pattern.search(output)
-            status_description = status_match.group(1) if status_match else None
-            return title, content, importance, status_description
+            return title, content, importance
         except Exception as e:
             logger.error(f"ObservationAgent. Failed to parse output: {output}")
             raise e
@@ -98,7 +89,7 @@ class ObservationAgent:
     ) -> None:
         character_situation = sim.current_status or ""
         character_description = self.format_character_description(sim)
-        title, content, importance, status_description = self.chain.invoke(
+        title, content, importance = self.chain.invoke(
             {
                 "location_description": location_description,
                 "character_description": character_description,
@@ -107,7 +98,5 @@ class ObservationAgent:
                 "context": context,
             }
         )
-        if status_description:
-            sim.current_status = status_description
 
         self.storage_manager.add_observation(title, content, importance, sim)

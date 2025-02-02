@@ -190,6 +190,8 @@ class GridPlacer:
         Every object can occupy several grid cells.
         One cell can contain several objects.
     5. Output the list of objects with their positions in the grid.
+    If an object occupies several cells, output the position of the top-left cell.
+    You can reuse the same object multiple times.
     
     -Location description-
     {location_description}
@@ -210,21 +212,21 @@ class GridPlacer:
     def __init__(self, llm_model: BaseChatModel):
         self.llm_model = llm_model
         prompt = PromptTemplate.from_template(self.PROMPT)
-        self.object_pattern = re.compile(r"\((.*?)\)")
+        self.object_pattern = re.compile(r"\((\d, \d, \d)\)")
         self.chain = prompt | llm_model | StrOutputParser() | self.parse_output
 
-    def parse_output(self, output: str) -> list[tuple[int, int, int]]:
+    def parse_output(self, output: str) -> set[tuple[int, int, int]]:
         try:
             output = output.replace("\n", " ")
             raw_objects = self.object_pattern.findall(output)
         except Exception as e:
             logger.error(f"GridPlacer. Failed to parse output: {output}")
             raise e
-        objects = []
+        objects = set()
         for raw_object in raw_objects:
             try:
                 object_id, x, y = raw_object.split(",")
-                objects.append((int(object_id), int(x), int(y)))
+                objects.add((int(object_id), int(x), int(y)))
             except Exception:
                 logger.error(f"GridPlacer. Failed to parse object: {raw_object}")
                 continue

@@ -85,6 +85,26 @@ class StorageManager:
                 sims.append(sim)
         return sims
 
+    def get_character_descriptions(
+        self, location_id: int, character_id: int
+    ) -> list[tuple[Sim, str]]:
+        main_sim = self.get_sim(character_id)
+        location = self.get_location(location_id)
+        sims = self.get_location_characters(location)
+        sims = [sim for sim in sims if sim.id != character_id]
+        known_sims = [sim for sim in sims if sim.id in main_sim.character_relations]
+        unknown_sims = [
+            sim for sim in sims if sim.id not in main_sim.character_relations
+        ]
+        character_descriptions = [
+            sim.character.get_stranger_description() for sim in unknown_sims
+        ]
+        for sim in known_sims:
+            character_descriptions.append(
+                f"<KnownCharacter>{sim.character.get_stranger_description()} Relations: {main_sim.character_relations[sim.id]}</KnownCharacter>"
+            )
+        return list(zip(unknown_sims + known_sims, character_descriptions))
+
     def save_map(self):
         json_text = self.map.model_dump_json(indent=2)
         self.settings.map_storage_path.write_text(json_text, encoding="utf-8")
@@ -119,7 +139,6 @@ class StorageManager:
             embeddings=embeddings,
         )
         sim.memories.append(memory)
-        self.save_characters()
 
     def get_memories(self, query: str, sim: Sim) -> list[Observation]:
         query_embeddings = self.embeddings_client.embed_query(query)
@@ -164,6 +183,10 @@ class StorageManager:
     def clear_memories(self):
         for sim in self.character_storage.player_characters.values():
             sim.memories = []
+            sim.character_relations = dict()
+            sim.object_memories_table = dict()
         for sim in self.character_storage.npc_characters.values():
             sim.memories = []
+            sim.character_relations = dict()
+            sim.object_memories_table = dict()
         self.save_characters()

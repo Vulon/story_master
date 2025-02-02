@@ -65,6 +65,10 @@ class Character(BaseModel, ABC):
     def get_worker_description(self) -> str:
         pass
 
+    @abstractmethod
+    def get_stranger_description(self) -> str:
+        pass
+
 
 class Adventurer(Character):
     type: Literal[CharacterType.ADVENTURER]
@@ -113,6 +117,17 @@ class Adventurer(Character):
         ]
         return " ".join(lines)
 
+    def get_stranger_description(self):
+        lines = [
+            "<Adventurer>",
+            f"Race: {self.race.name}",
+            f"Sex: {self.sex}",
+            f"Age: {self.age}",
+            f"Background: {self.background.name}",
+            "</Adventurer>",
+        ]
+        return " ".join(lines)
+
 
 class Commoner(Character):
     type: Literal[CharacterType.COMMONER]
@@ -146,6 +161,16 @@ class Commoner(Character):
             f"Age: {self.age}",
             f"Class: {self.klass.get_short_class_description()}",
             f"Tool proficiencies: <Tools>{'; '.join([f"{tool.name} - {tool.description}" for tool in self.tool_proficiencies])}</Tools>",
+            "</Commoner>",
+        ]
+        return " ".join(lines)
+
+    def get_stranger_description(self):
+        lines = [
+            "<Commoner>",
+            f"Race: {self.race.name}",
+            f"Sex: {self.sex}",
+            f"Age: {self.age}",
             "</Commoner>",
         ]
         return " ".join(lines)
@@ -186,6 +211,16 @@ class Merchant(Character):
         ]
         return " ".join(lines)
 
+    def get_stranger_description(self):
+        lines = [
+            "<Merchant>",
+            f"Race: {self.race.name}",
+            f"Sex: {self.sex}",
+            f"Age: {self.age}",
+            "</Merchant>",
+        ]
+        return " ".join(lines)
+
 
 class Creature(Character):
     type: Literal[CharacterType.CREATURE]
@@ -214,6 +249,16 @@ class Creature(Character):
             f"Name: {self.name}",
             f"Age: {self.age}",
             f"Class: {self.klass.get_short_class_description()}",
+            "</Creature>",
+        ]
+        return " ".join(lines)
+
+    def get_stranger_description(self):
+        lines = [
+            "<Creature>",
+            f"Race: {self.race.name}",
+            f"Sex: {self.sex}",
+            f"Age: {self.age}",
             "</Creature>",
         ]
         return " ".join(lines)

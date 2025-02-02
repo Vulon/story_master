@@ -24,12 +24,11 @@ class DialogAction(Action):
     -Steps-
     1. Read the main character intention.
     2. Read the description of the main character
-    3. Read main character memory.
-    4. Read the description of the dialog responder.
-    5. Read the memory of the dialog responder.
-    6. Read the description of the location.
-    7. Generate a response from the perspective of the dialog responder.
-    8. Output the response:
+    3. Read the description of the dialog responder.
+    4. Read the memory of the dialog responder.
+    5. Read the description of the location.
+    6. Generate a response from the perspective of the dialog responder.
+    7. Output the response:
         Format: <Response>Response</Response>
 
     -Main character intention-
@@ -37,9 +36,6 @@ class DialogAction(Action):
 
     -Main character description-
     {main_character_description}
-
-    -Main character memory-
-    {main_character_memory}
 
     -Dialog responder description-
     {dialog_responder_description}
@@ -89,20 +85,15 @@ class DialogAction(Action):
         target = self.storage_manager.get_sim(responder_character_id)
         location = self.storage_manager.get_location(location_id)
 
-        actor_description = self.summary_agent.get_summary(
-            f"Extract any information that can be relevant for this character's speech: {intent}",
-            f"Character information: {actor.character.get_description()}. Status: {actor.current_status}.",
-        )
+        actor_description = f"{actor.character.get_stranger_description()}. Status: {actor.current_status}."
+        if actor.id in target.character_relations:
+            actor_description += (
+                f" Previous relations: {target.character_relations[actor.id]}."
+            )
+
         target_description = self.summary_agent.get_summary(
             f"Extract any information that can be relevant to create a response to the following intent: {intent}",
             f"Character information: {target.character.get_description()}. Status: {target.current_status}.",
-        )
-
-        actor_memories = self.summary_agent.summarize_memories(
-            f"Extract any information that can be relevant for this character's speech: {intent}",
-            self.storage_manager.get_memories(
-                f"Dialog with {target.character.name}. Intent: {intent}", actor
-            ),
         )
 
         target_memories = self.summary_agent.summarize_memories(
@@ -121,7 +112,6 @@ class DialogAction(Action):
             {
                 "main_character_intention": intent,
                 "main_character_description": actor_description,
-                "main_character_memory": actor_memories,
                 "dialog_responder_description": target_description,
                 "dialog_responder_memory": target_memories,
                 "location_description": location_description,
@@ -132,12 +122,43 @@ class DialogAction(Action):
         {target.character.name} is responding: {target_response}.
         """
         logger.info(f"Context: {context}")
-        self.observation_agent.run(actor, context, actor_memories, location_description)
+
+        if target.id in actor.character_relations:
+            relations_string = (
+                actor.character_relations[target.id]
+                + f" I said: {intent}. They responded: {target_response}."
+            )
+            relations_string = self.summary_agent.get_summary(
+                "Summarize relations", relations_string
+            )
+        else:
+            relations_string = f"I said: {intent}. They responded: {target_response}."
+        actor.character_relations[target.id] = relations_string
+
+        if actor.id in target.character_relations:
+            relations_string = (
+                target.character_relations[actor.id]
+                + f" They said: {intent}. I responded: {target_response}."
+            )
+            relations_string = self.summary_agent.get_summary(
+                "Summarize relations", relations_string
+            )
+        else:
+            relations_string = f"They said: {intent}. I responded: {target_response}."
+        target.character_relations[actor.id] = relations_string
+
+        self.observation_agent.run(
+            actor, context, location_description=location_description
+        )
         self.observation_agent.run(
             target, context, target_memories, location_description
         )
+        actor.current_status = f"In a dialog with {target.character.name}."
+        target.current_status = f"In a dialog with {actor.character.name}."
+
         logger.info(f"Actor memory {actor.memories[-1].content}")
         logger.info(f"Responder memory {target.memories[-1].content}")
+        self.storage_manager.save_characters()
 
     def get_description(self) -> str:
         return "Generate a response in a dialog between the main character and a dialog responder."
