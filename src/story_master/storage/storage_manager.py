@@ -9,10 +9,8 @@ from langchain_core.embeddings import Embeddings
 from story_master.entities.character import ANY_CHARACTER
 from story_master.entities.races import RaceType
 from story_master.settings import Settings
-from story_master.storage.map.base_map import DEFAULT_MAP
 from story_master.storage.map.map_model import (
     DetailedArea,
-    LargeArea,
     Map,
     BaseLocation,
 )
@@ -40,7 +38,7 @@ class StorageManager:
         if settings.map_storage_path.exists():
             self.map = Map(**json.loads(self.settings.map_storage_path.read_text()))
         else:
-            self.map = DEFAULT_MAP
+            self.map = Map(locations=dict())
 
         if settings.game_storage_path.exists():
             self.game_storage = GameStorage(
@@ -53,7 +51,7 @@ class StorageManager:
                 current_time=self.settings.default_starting_time
             )
 
-    def get_location(self, location_id: int) -> DetailedArea | LargeArea:
+    def get_location(self, location_id: int) -> BaseLocation:
         return self.map.locations[location_id]
 
     def add_character(
@@ -161,13 +159,6 @@ class StorageManager:
             memory
             for memory, _ in scored_memories[: self.settings.max_similar_memories]
         ]
-
-    def format_memories(self, memories: list[Observation]) -> str:
-        strings = []
-        for memory in memories:
-            strings.append(f"{memory.title}: {memory.content}")
-        memories_string = " \n ".join(strings)
-        return f"<Memory>{memories_string}</Memory>"
 
     def get_existing_names(self, race: RaceType) -> set[str]:
         return {

@@ -71,6 +71,13 @@ class SummaryAgent:
         information = character.get_description()
         return self.get_summary(context, information)
 
+    def format_memories(self, memories: list[Observation]) -> str:
+        strings = []
+        for memory in memories:
+            strings.append(f"{memory.title}: {memory.content}")
+        memories_string = " \n ".join(strings)
+        return f"<Memory>{memories_string}</Memory>"
+
     def summarize_memories(self, context: str, memories: list[Observation]) -> str:
-        information = self.storage_manager.format_memories(memories)
+        information = self.format_memories(memories)
         return self.get_summary(context, information)
