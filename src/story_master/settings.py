@@ -13,4 +13,4 @@ class Settings(BaseSettings):
     main_player_id: int = 0
 
     default_starting_time: datetime = datetime(1410, 5, 1, 10, 0, 0)
-    max_similar_memories: int = 5
+

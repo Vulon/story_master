@@ -6,7 +6,7 @@ from langchain_core.output_parsers import StrOutputParser
 
 from story_master.action_handling.actions.action import Action
 from story_master.action_handling.parameter import Parameter
-from story_master.entities.items.items import ItemStack
+from story_master.entities.items import ItemStack
 from story_master.generators.make_observation import ObservationAgent
 from story_master.log import logger
 from story_master.storage.map.map_model import DetailedArea, EnvironmentPart

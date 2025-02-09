@@ -4,14 +4,15 @@ from langchain.prompts import PromptTemplate
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import StrOutputParser
 
-from story_master.storage.storage_models import Sim
-from story_master.storage.storage_manager import StorageManager
+from story_master.entities.sim import Sim
+from story_master.entities.handlers.storage_handler import StorageHandler
+from story_master.entities.handlers.memory_handler import MemoryHandler
 from story_master.log import logger
 
 
-class ObservationAgent:
+class ObservationHandler:
     PROMPT = """
-    You are a Dungeons and Dragons agent.
+    You are an agent for a simulation game, responsible for creating memory entries for characters.
 
     -Goal-
     Create a memory entry for the character.    
@@ -31,17 +32,17 @@ class ObservationAgent:
         Format: <Title>Title</Title>
                 <Content>Content</Content>
                 <Importance>Importance</Importance>
-    
+
     -Location description-
     {location_description}
-    
+
     -Character description-
     {character_description}
-    
+
     -Character memories-
     {character_memories}
-    
-    
+
+
     -Context-
     {context}
 
@@ -50,11 +51,12 @@ class ObservationAgent:
     """
 
     def __init__(
-        self,
-        storage_manager: StorageManager,
-        llm_model: BaseChatModel,
+            self,
+            llm_model: BaseChatModel,
+            memory_handler: MemoryHandler,
+
     ):
-        self.storage_manager = storage_manager
+        self.memory_handler = memory_handler
         self.prompt = PromptTemplate.from_template(self.PROMPT)
         self.title_pattern = re.compile(r"<Title>(.*?)</Title>")
         self.content_pattern = re.compile(r"<Content>(.*?)</Content>")
@@ -74,20 +76,20 @@ class ObservationAgent:
 
     def format_character_description(self, sim: Sim) -> str:
         lines = [
-            f"ID: {sim.id}. ",
             f"Name: {sim.character.name}. ",
-            f"Type: {sim.character.type}. ",
+            f"Age: {sim.character.age}. ",
+            f"Gender: {sim.character.gender}.",
         ]
         return " ".join(lines)
 
     def run(
-        self,
-        sim: Sim,
-        context: str,
-        memories_string: str = "",
-        location_description: str = "",
+            self,
+            sim: Sim,
+            context: str,
+            memories_string: str = "",
+            location_description: str = "",
     ) -> None:
-        character_situation = sim.current_status or ""
+        character_situation = sim.current_status
         character_description = self.format_character_description(sim)
         title, content, importance = self.chain.invoke(
             {
@@ -99,4 +101,11 @@ class ObservationAgent:
             }
         )
 
-        self.storage_manager.add_observation(title, content, importance, sim)
+        self.memory_handler.add_observation(
+            title=title,
+            content=content,
+            importance=importance,
+            sim=sim
+        )
+
+

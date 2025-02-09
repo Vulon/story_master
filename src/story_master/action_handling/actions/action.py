@@ -2,8 +2,8 @@ from abc import abstractmethod, ABC
 
 from langchain_core.language_models.chat_models import BaseChatModel
 
-from story_master.storage.storage_manager import StorageManager
-from story_master.storage.summary import SummaryAgent
+from story_master.entities.handlers.storage_handler import StorageHandler
+from story_master.entities.handlers.summary_handler import SummaryHandler
 from story_master.action_handling.parameter import Parameter
 
 
@@ -11,12 +11,12 @@ class Action(ABC):
     def __init__(
         self,
         llm_model: BaseChatModel,
-        summary_agent: SummaryAgent,
-        storage_manager: StorageManager,
+        summary_handler: SummaryHandler,
+        storage_handler: StorageHandler
     ):
         self.llm_model = llm_model
-        self.storage_manager = storage_manager
-        self.summary_agent = summary_agent
+        self.summary_handler = summary_handler
+        self.storage_handler = storage_handler
 
     @abstractmethod
     def execute(self, **kwargs):

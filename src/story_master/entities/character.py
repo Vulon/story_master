@@ -1,21 +1,8 @@
 from enum import StrEnum
 from typing import Literal
-from abc import ABC, abstractmethod
+from abc import ABC
 
 from pydantic import BaseModel
-
-from story_master.entities.alignment import AlignmentType
-from story_master.entities.background import Background
-from story_master.entities.characteristics import (
-    SKILL_CONDITIONS,
-    CharacteristicType,
-    SkillType,
-)
-from story_master.entities.classes import AdventurerClass, CivilianClass, CreatureClass
-from story_master.entities.items import Armor, Instrument, WeaponType
-from story_master.entities.items.items import ItemStack
-from story_master.entities.perks import Perk
-from story_master.entities.races import Race
 
 
 class Gender(StrEnum):
@@ -28,264 +15,76 @@ GENDERS = [Gender.MALE, Gender.FEMALE, Gender.OTHER]
 
 
 class CharacterType(StrEnum):
-    ADVENTURER = "adventurer"
-    # Common people with no combat skills including peasants, farmers, townsfolk, etc.
-    COMMONER = "commoner"
-    MERCHANT = "merchant"
+    SETTLER = "settler"
     # Monsters, animals, etc.
-    CREATURE = "creature"
+    ANIMAL = "animal"
 
 
 class Character(BaseModel, ABC):
     type: CharacterType
     name: str
-    sex: Gender
+    appearance: str
+    gender: Gender
     age: int
-    alignment: AlignmentType
 
-    max_health: int
-    current_health: int
-    level: int = 1
-    experience: int = 0
-
-    race: Race
-
-    strength: int
-    agility: int
-    constitution: int
-    intelligence: int
-    wisdom: int
-    charisma: int
-
-    @abstractmethod
-    def get_description(self) -> str:
+    def get_self_description(self) -> str:
         pass
 
-    @abstractmethod
-    def get_worker_description(self) -> str:
+    def get_external_description(self) -> str:
         pass
 
-    @abstractmethod
-    def get_stranger_description(self) -> str:
-        pass
+class Settler(Character):
+    type: Literal[CharacterType.SETTLER] = CharacterType.SETTLER
 
-
-class Adventurer(Character):
-    type: Literal[CharacterType.ADVENTURER]
-    klass: AdventurerClass
-    background: Background
-    saving_throws: list[CharacteristicType]
-    perks: list[Perk]
-    armor_proficiencies: list[Armor]
-    weapon_proficiencies: list[WeaponType]
-    skills: list[SkillType]
-    items: dict[str, ItemStack]
-    tool_proficiencies: list[Instrument]
-    money: float = 0
-
-    def get_description(self) -> str:
+    def get_self_description(self) -> str:
         lines = [
-            "<Adventurer>",
+            "<Settler>",
             f"Name: {self.name}",
-            f"Sex: {self.sex}",
+            f"Appearance: {self.appearance}",
+            f"Gender: {self.gender}",
             f"Age: {self.age}",
-            f"Alignment: {self.alignment}",
-            f"Health: {self.current_health}/{self.max_health}",
-            f"Race: <Race>{self.race.get_shorter_description()}</Race>",
-            f"Class: {self.klass.get_short_class_description()}",
-            f"Background: <Background>{self.background.get_description()}</Background>",
-            f"Level: {self.level}",
-            f"Armor proficiencies: <Armor>{'; '.join([str(armor_category.name) for armor_category in self.armor_proficiencies])}</Armor>",
-            f"Weapon proficiencies: <Weapons>{'; '.join([str(weapon.value) for weapon in self.weapon_proficiencies])}</Weapons>",
-            f"Skills: <Skills>{'; '.join([f'{skill.value}: {SKILL_CONDITIONS[skill]}' for skill in self.skills])}</Skills>",
-            f"Items: <Items>{'; '.join([f'{stack.item.name} x {stack.quantity}' for stack in self.items.values()])}</Items>",
-            f"Tool proficiencies: <Tools>{'; '.join([tool.get_full_description() for tool in self.tool_proficiencies])}</Tools>",
-            f"Money: {self.money}",
-            f"Perks: <Perks>{'; '.join([perk.get_full_description() for perk in self.perks])}</Perks>",
-            "</Adventurer>",
+            "</Settler>",
         ]
         return " ".join(lines)
 
-    def get_worker_description(self) -> str:
+    def get_external_description(self) -> str:
         lines = [
-            "<Adventurer>",
+            "<Settler>",
+            f"Appearance: {self.appearance}",
+            f"Gender: {self.gender}",
+            "</Settler>",
+        ]
+        return " ".join(lines)
+
+
+class Animal(Character):
+    type: Literal[CharacterType.ANIMAL] = CharacterType.ANIMAL
+
+    def get_self_description(self) -> str:
+        lines = [
+            "<Animal>",
             f"Name: {self.name}",
+            f"Appearance: {self.appearance}",
+            f"Gender: {self.gender}",
             f"Age: {self.age}",
-            f"Class: {self.klass.get_short_class_description()}",
-            f"Tool proficiencies: <Tools>{'; '.join([f"{tool.name} - {tool.description}" for tool in self.tool_proficiencies])}</Tools>",
-            "</Adventurer>",
+            "</Animal>",
         ]
         return " ".join(lines)
 
-    def get_stranger_description(self):
+    def get_external_description(self) -> str:
         lines = [
-            "<Adventurer>",
-            f"Race: {self.race.name}",
-            f"Sex: {self.sex}",
-            f"Age: {self.age}",
-            f"Background: {self.background.name}",
-            "</Adventurer>",
+            "<Animal>",
+            f"Appearance: {self.appearance}",
+            f"Gender: {self.gender}",
+            "</Animal>",
         ]
         return " ".join(lines)
 
 
-class Commoner(Character):
-    type: Literal[CharacterType.COMMONER]
-    klass: CivilianClass
-    money: float = 0
-    items: dict[str, ItemStack]
-    tool_proficiencies: list[Instrument]
-
-    def get_description(self) -> str:
-        lines = [
-            "<Commoner>",
-            f"Name: {self.name}",
-            f"Sex: {self.sex}",
-            f"Age: {self.age}",
-            f"Alignment: {self.alignment}",
-            f"Health: {self.current_health}/{self.max_health}",
-            f"Race: <Race>{self.race.get_shorter_description()}</Race>",
-            f"Class: {self.klass.get_short_class_description()}",
-            f"Level: {self.level}",
-            f"Items: <Items>{'; '.join([f'{stack.item.name} x {stack.quantity}' for stack in self.items.values()])}</Items>",
-            f"Tool proficiencies: <Tools>{'; '.join([tool.get_full_description() for tool in self.tool_proficiencies])}</Tools>",
-            f"Money: {self.money}",
-            "</Commoner>",
-        ]
-        return " ".join(lines)
-
-    def get_worker_description(self) -> str:
-        lines = [
-            "<Commoner>",
-            f"Name: {self.name}",
-            f"Age: {self.age}",
-            f"Class: {self.klass.get_short_class_description()}",
-            f"Tool proficiencies: <Tools>{'; '.join([f"{tool.name} - {tool.description}" for tool in self.tool_proficiencies])}</Tools>",
-            "</Commoner>",
-        ]
-        return " ".join(lines)
-
-    def get_stranger_description(self):
-        lines = [
-            "<Commoner>",
-            f"Race: {self.race.name}",
-            f"Sex: {self.sex}",
-            f"Age: {self.age}",
-            "</Commoner>",
-        ]
-        return " ".join(lines)
-
-
-class Merchant(Character):
-    type: Literal[CharacterType.MERCHANT]
-    klass: CivilianClass
-    money: float = 0
-    items: dict[str, ItemStack]
-    stock: dict[str, ItemStack]
-
-    def get_description(self) -> str:
-        lines = [
-            "<Merchant>",
-            f"Name: {self.name}",
-            f"Sex: {self.sex}",
-            f"Age: {self.age}",
-            f"Alignment: {self.alignment}",
-            f"Health: {self.current_health}/{self.max_health}",
-            f"Race: <Race>{self.race.get_shorter_description()}</Race>",
-            f"Class: {self.klass.get_short_class_description()}",
-            f"Level: {self.level}",
-            f"Items: <Items>{'; '.join([f'{stack.item.name} x {stack.quantity}' for stack in self.items.values()])}</Items>",
-            f"Stock for sale: <Stock>{'; '.join([f'{stack.item.name} x {stack.quantity}' for stack in self.stock.values()])}</Stock>",
-            f"Money: {self.money}",
-            "</Merchant>",
-        ]
-        return " ".join(lines)
-
-    def get_worker_description(self) -> str:
-        lines = [
-            "<Merchant>",
-            f"Name: {self.name}",
-            f"Age: {self.age}",
-            f"Class: {self.klass.get_short_class_description()}",
-            "</Merchant>",
-        ]
-        return " ".join(lines)
-
-    def get_stranger_description(self):
-        lines = [
-            "<Merchant>",
-            f"Race: {self.race.name}",
-            f"Sex: {self.sex}",
-            f"Age: {self.age}",
-            "</Merchant>",
-        ]
-        return " ".join(lines)
-
-
-class Creature(Character):
-    type: Literal[CharacterType.CREATURE]
-    klass: CreatureClass
-    saving_throws: list[CharacteristicType]
-    perks: list[Perk]
-
-    def get_description(self) -> str:
-        lines = [
-            "<Creature>",
-            f"Name: {self.name}",
-            f"Sex: {self.sex}",
-            f"Age: {self.age}",
-            f"Alignment: {self.alignment}",
-            f"Health: {self.current_health}/{self.max_health}",
-            f"Race: <Race>{self.race.get_shorter_description()}</Race>",
-            f"Level: {self.level}",
-            f"Perks: <Perks>{'; '.join([perk.get_full_description() for perk in self.perks])}</Perks>",
-            "</Creature>",
-        ]
-        return " ".join(lines)
-
-    def get_worker_description(self) -> str:
-        lines = [
-            "<Creature>",
-            f"Name: {self.name}",
-            f"Age: {self.age}",
-            f"Class: {self.klass.get_short_class_description()}",
-            "</Creature>",
-        ]
-        return " ".join(lines)
-
-    def get_stranger_description(self):
-        lines = [
-            "<Creature>",
-            f"Race: {self.race.name}",
-            f"Sex: {self.sex}",
-            f"Age: {self.age}",
-            "</Creature>",
-        ]
-        return " ".join(lines)
-
-
-ANY_CHARACTER = Adventurer | Commoner | Merchant | Creature
+ANY_CHARACTER = Settler | Animal
 
 CHARACTER_TYPE_TABLE = {
-    CharacterType.ADVENTURER: Adventurer,
-    CharacterType.COMMONER: Commoner,
-    CharacterType.MERCHANT: Merchant,
-    CharacterType.CREATURE: Creature,
+    CharacterType.SETTLER: Settler,
+    CharacterType.ANIMAL: Animal,
 }
 
-
-def calculate_bonus_from_characteristics(value: int) -> int:
-    if value < 2:
-        return -5
-    if value > 39:
-        return +10
-    return (value - 10) // 2
-
-
-def calculate_mastery_from_level(level: int) -> int:
-    return (level - 1) // 4 + 2
-
-
-def calculate_experience_to_next_level(level: int) -> int:
-    # TODO: Implement a better formula
-    return level * 1000

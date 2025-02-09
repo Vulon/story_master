@@ -1,7 +1,6 @@
 from langchain_core.language_models.chat_models import BaseChatModel
 
-from story_master.storage.storage_manager import StorageManager
-from story_master.storage.summary import SummaryAgent
+
 from story_master.action_handling.parameter import FilledParameter
 
 from story_master.action_handling.actions.action_factory import (
@@ -10,23 +9,25 @@ from story_master.action_handling.actions.action_factory import (
 )
 from story_master.action_handling.context_manager import ContextManager
 from story_master.action_handling.providers.provider_factory import create_provider_list
+from story_master.entities.handlers.storage_handler import StorageHandler
+from story_master.entities.handlers.summary_handler import SummaryHandler
 
 
 class ActionHandler:
     def __init__(
         self,
         llm_model: BaseChatModel,
-        summary_agent: SummaryAgent,
-        storage_manager: StorageManager,
+        summary_handler: SummaryHandler,
+        storage_handler: StorageHandler
     ):
         self.llm_model = llm_model
-        self.summary_agent = summary_agent
-        self.storage_manager = storage_manager
+        self.summary_handler = summary_handler
+        self.storage_handler = storage_handler
 
         self.action_table = create_action_table(
-            llm_model, summary_agent, storage_manager
+            llm_model, summary_handler, storage_handler
         )
-        providers_list = create_provider_list(llm_model, summary_agent, storage_manager)
+        providers_list = create_provider_list(llm_model, summary_handler, storage_handler)
         self.context_manager = ContextManager(providers_list)
 
     def handle(
