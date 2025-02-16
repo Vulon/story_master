@@ -21,6 +21,9 @@ class ContextManager:
     def add(self, parameter: FilledParameter) -> None:
         self.data[parameter.name] = parameter
 
+    def is_parameter_filled(self, parameter_name: str) -> bool:
+        return parameter_name in self.data
+
     def resolve_providers(self, parameter_names: Iterable[str]) -> None:
         missing_parameters = set(parameter_names) - set(self.data.keys())
         providers_queue = []

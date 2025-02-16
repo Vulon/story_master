@@ -33,6 +33,7 @@ class Character(BaseModel, ABC):
     def get_external_description(self) -> str:
         pass
 
+
 class Settler(Character):
     type: Literal[CharacterType.SETTLER] = CharacterType.SETTLER
 
@@ -87,4 +88,3 @@ CHARACTER_TYPE_TABLE = {
     CharacterType.SETTLER: Settler,
     CharacterType.ANIMAL: Animal,
 }
-

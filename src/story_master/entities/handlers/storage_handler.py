@@ -1,18 +1,25 @@
 from story_master.settings import Settings
-from langchain_community.utils.math import cosine_similarity
-from langchain_core.embeddings import Embeddings
 from pydantic import BaseModel
 import json
 from story_master.entities.sim import Sim
 from story_master.entities.location import Map, BaseLocation
 from datetime import datetime
 
+
 class CharacterStorage(BaseModel):
     player_characters: dict[int, Sim] = {}
     npc_characters: dict[int, Sim] = {}
 
+    def get_new_id(self) -> int:
+        all_ids = set(self.player_characters.keys()) | set(self.npc_characters.keys())
+        if len(all_ids) == 0:
+            return 0
+        return max(all_ids) + 1
+
+
 class GameStorage(BaseModel):
     current_time: datetime
+
 
 class StorageHandler:
     def __init__(self, settings: Settings):
@@ -63,12 +70,14 @@ class StorageHandler:
         json_text = self.character_storage.model_dump_json(indent=2)
         self.settings.characters_storage_path.write_text(json_text, encoding="utf-8")
 
+    def save_game(self):
+        json_text = self.game_storage.model_dump_json(indent=2)
+        self.settings.game_storage_path.write_text(json_text, encoding="utf-8")
+
     def get_existing_names(self) -> set[str]:
         return {
-            sim.character.name
-            for sim in self.character_storage.npc_characters.values()
+            sim.character.name for sim in self.character_storage.npc_characters.values()
         } | {
             sim.character.name
             for sim in self.character_storage.player_characters.values()
         }
-

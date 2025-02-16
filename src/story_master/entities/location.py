@@ -1,7 +1,6 @@
-from enum import StrEnum
 from abc import ABC, abstractmethod
 from pydantic import BaseModel
-from typing_extensions import Literal, Self
+from typing_extensions import Self
 
 DEFAULT_WORLD_WIDTH = 3
 DEFAULT_WORLD_HEIGHT = 3
@@ -11,6 +10,10 @@ class Position(BaseModel):
     location_id: int | None
     x: int
     y: int
+
+    def is_close(self, other: Self, radius: int) -> bool:
+        return abs(self.x - other.x) <= radius and abs(self.y - other.y) <= radius
+
 
 class BaseLocation(BaseModel, ABC):
     id: int
@@ -51,6 +54,7 @@ class Object(BaseModel):
         ]
         return " ".join(lines)
 
+
 class Building(BaseLocation):
     objects: dict[int, Object] = dict()
 
@@ -81,7 +85,9 @@ class Region(BaseLocation):
         ]
         return " ".join(lines)
 
+
 ANY_LOCATION = Region | Building
+
 
 class Map(BaseModel):
     locations: dict[int, ANY_LOCATION] = dict()

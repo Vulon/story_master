@@ -9,11 +9,9 @@ from pydantic import BaseModel
 from story_master.entities.character import (
     GENDERS,
     Character,
-    CharacterType,
-    Gender, Settler,
+    Gender,
+    Settler,
 )
-import random
-
 
 
 from story_master.entities.handlers.storage_handler import StorageHandler
@@ -71,6 +69,7 @@ class CharacterParameterGenerator:
         self.chain = prompt | llm_model | StrOutputParser() | self.parse_output
 
     def parse_output(self, output: str):
+        output = output.replace("\n", " ")
         try:
             raw_gender_match = self.gender_pattern.search(output)
             gender = get_close_matches(
@@ -97,7 +96,6 @@ class CharacterParameterGenerator:
     def create_genders_description(self) -> str:
         return "; ".join([item.name for item in GENDERS])
 
-
     def generate(self, character_description: str):
         gender_description = self.create_genders_description()
         return self.chain.invoke(
@@ -114,24 +112,19 @@ class CharacterGenerator:
         llm_model: BaseChatModel,
         storage_handler: StorageHandler,
         summary_handler: SummaryHandler,
-
     ):
         self.llm_model = llm_model
         self.summary_handler = summary_handler
         self.storage_handler = storage_handler
         self.character_parameter_generator = CharacterParameterGenerator(self.llm_model)
 
-
     def _create_base_character_info(
         self, character_description: str
     ) -> BaseCharacterInfo:
-
         gender, age, name, appearance = self.character_parameter_generator.generate(
             character_description
         )
-        character_description += (
-            f" Sex: {gender}, Age: {age}. Name: {name} "
-        )
+        character_description += f" Sex: {gender}, Age: {age}. Name: {name} "
 
         existing_names = self.storage_handler.get_existing_names()
 
@@ -143,10 +136,7 @@ class CharacterGenerator:
             appearance=appearance,
         )
 
-
-    def generate(
-        self, character_description: str
-    ) -> Character:
+    def generate(self, character_description: str) -> Character:
         base_character_info = self._create_base_character_info(character_description)
 
         character = Settler(

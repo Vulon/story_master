@@ -1,14 +1,15 @@
+from story_master.entities.handlers.event_handler import EventHandler
 from story_master.llm_client import get_client, get_embeddings_client
 
 from story_master.settings import Settings
-from story_master.log import logger
 from story_master.action_handling.action_handler import ActionHandler
-from story_master.action_handling.actions.action_factory import ActionType
+from story_master.action_handling.sim_actions.action_factory import ActionType
 from story_master.entities.handlers.storage_handler import StorageHandler
 from story_master.entities.handlers.summary_handler import SummaryHandler
 from story_master.entities.handlers.memory_handler import MemoryHandler
 from story_master.entities.handlers.observation_handler import ObservationHandler
 from story_master.generators.environment_generation.map_creator import MapCreator
+
 
 class Engine:
     def __init__(self):
@@ -18,18 +19,34 @@ class Engine:
 
         self.storage_handler = StorageHandler(self.settings)
         self.summary_handler = SummaryHandler(self.client)
-        self.memory_handler = MemoryHandler(self.client, embeddings_client, self.storage_handler)
-        self.observation_handler = ObservationHandler(
-            self.client, self.memory_handler,
+        self.memory_handler = MemoryHandler(
+            self.client, embeddings_client, self.storage_handler
         )
+        self.observation_handler = ObservationHandler(
+            self.client,
+            self.memory_handler,
+        )
+        self.event_handler = EventHandler(self.storage_handler)
 
         self.action_handler = ActionHandler(
-            self.client, self.summary_handler, self.storage_handler
+            self.client,
+            self.summary_handler,
+            self.storage_handler,
+            self.observation_handler,
+            self.memory_handler,
+            self.event_handler,
         )
 
-        self.map_creator = MapCreator(self.client, self.storage_handler, self.summary_handler)
+        self.map_creator = MapCreator(
+            self.client, self.storage_handler, self.summary_handler
+        )
 
     def run(self):
-        self.storage_handler.map.locations = dict()
+        # self.storage_handler.map.locations = dict()
+        #
+        # self.map_creator.create_map()
+        # center = Position(location_id=0, x=0, y=0)
+        # self.map_creator.generate_area(center, 7)
+        # self.storage_handler.save_map()
 
-        self.map_creator.create_map()
+        self.action_handler.handle_system_action(ActionType.SPAWN_SIM)

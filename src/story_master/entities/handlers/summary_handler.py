@@ -1,4 +1,3 @@
-
 import re
 
 from langchain.prompts import PromptTemplate
@@ -6,8 +5,6 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import StrOutputParser
 
 from story_master.log import logger
-
-
 
 
 class SummaryHandler:

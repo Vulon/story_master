@@ -5,7 +5,6 @@ from langchain_core.language_models.chat_models import BaseChatModel
 from langchain_core.output_parsers import StrOutputParser
 
 from story_master.entities.sim import Sim
-from story_master.entities.handlers.storage_handler import StorageHandler
 from story_master.entities.handlers.memory_handler import MemoryHandler
 from story_master.log import logger
 
@@ -51,10 +50,9 @@ class ObservationHandler:
     """
 
     def __init__(
-            self,
-            llm_model: BaseChatModel,
-            memory_handler: MemoryHandler,
-
+        self,
+        llm_model: BaseChatModel,
+        memory_handler: MemoryHandler,
     ):
         self.memory_handler = memory_handler
         self.prompt = PromptTemplate.from_template(self.PROMPT)
@@ -83,11 +81,11 @@ class ObservationHandler:
         return " ".join(lines)
 
     def run(
-            self,
-            sim: Sim,
-            context: str,
-            memories_string: str = "",
-            location_description: str = "",
+        self,
+        sim: Sim,
+        context: str,
+        memories_string: str = "",
+        location_description: str = "",
     ) -> None:
         character_situation = sim.current_status
         character_description = self.format_character_description(sim)
@@ -102,10 +100,5 @@ class ObservationHandler:
         )
 
         self.memory_handler.add_observation(
-            title=title,
-            content=content,
-            importance=importance,
-            sim=sim
+            title=title, content=content, importance=importance, sim=sim
         )
-
-

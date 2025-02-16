@@ -5,8 +5,6 @@ from typing import Literal
 from pydantic import BaseModel
 
 
-
-
 class PersonalMemoryType(StrEnum):
     OBSERVATION = "observation"
     REFLECTION = "reflection"
@@ -30,21 +28,27 @@ class Reflection(AbstractPersonalMemory):
     type: Literal[PersonalMemoryType.REFLECTION] = PersonalMemoryType.REFLECTION
     sources: list[int]
 
+
 class ObjectMemory(BaseModel):
     location_id: int
     x: int
     y: int
     memory: str
 
+
 class Relationship(BaseModel):
+    name: str
     character_id: int
     text: str
+
 
 class LocationMemory(BaseModel):
     location_id: int
     text: str
 
+
 class Memory(BaseModel):
+    plan: str = ""
     personal_memories: list[Observation | Reflection] = []
     object_memories: list[ObjectMemory] = []
     relationships: list[Relationship] = []

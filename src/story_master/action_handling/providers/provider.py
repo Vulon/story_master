@@ -11,7 +11,7 @@ class Provider(ABC):
         self,
         llm_model: BaseChatModel,
         summary_handler: SummaryHandler,
-        storage_handler: StorageHandler
+        storage_handler: StorageHandler,
     ):
         self.llm_model = llm_model
         self.summary_handler = summary_handler

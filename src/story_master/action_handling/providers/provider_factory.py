@@ -15,8 +15,8 @@ from story_master.action_handling.providers.provider import Provider
 
 def create_provider_list(
     llm_model: BaseChatModel,
-        summary_handler: SummaryHandler,
-        storage_handler: StorageHandler
+    summary_handler: SummaryHandler,
+    storage_handler: StorageHandler,
 ) -> list[Provider]:
     return [
         # LocationProvider(llm_model, summary_handler, storage_handler),

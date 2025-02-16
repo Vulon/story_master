@@ -6,4 +6,3 @@ class Item(BaseModel):
     description: str
     weight: float = 0
     quantity: float
-

@@ -6,7 +6,7 @@ from langchain_core.output_parsers import StrOutputParser
 from pydantic import BaseModel
 
 from story_master.log import logger
-from story_master.entities.location import BaseLocation, DEFAULT_WORLD_WIDTH, DEFAULT_WORLD_HEIGHT, Region
+from story_master.entities.location import DEFAULT_WORLD_WIDTH, DEFAULT_WORLD_HEIGHT
 
 
 class BaseLocationInformation(BaseModel):
@@ -14,6 +14,7 @@ class BaseLocationInformation(BaseModel):
     description: str
     x: int
     y: int
+
 
 class MapDecomposer:
     PROMPT = """
@@ -62,7 +63,6 @@ class MapDecomposer:
             output = output.replace("\n", " ")
             regions = self.region_pattern.findall(output)
         except Exception as e:
-
             logger.error(f"RootDecomposer. Failed to parse output: {output}")
             raise e
 
@@ -73,20 +73,18 @@ class MapDecomposer:
                 description = self.description_pattern.search(region).group(1)
                 x = int(self.x_pattern.search(region).group(1))
                 y = int(self.y_pattern.search(region).group(1))
-                parsed_regions.append(BaseLocationInformation(
-                    name=name,
-                    description=description,
-                    x=x,
-                    y=y
-                ))
+                parsed_regions.append(
+                    BaseLocationInformation(
+                        name=name, description=description, x=x, y=y
+                    )
+                )
             except Exception:
                 logger.error(f"RootDecomposer. Can't process region {region}")
                 continue
         return parsed_regions
 
     def generate(self) -> list[BaseLocationInformation]:
-        parsed_regions = self.chain.invoke({
-            "world_height": DEFAULT_WORLD_HEIGHT,
-            "world_width": DEFAULT_WORLD_WIDTH
-        })
+        parsed_regions = self.chain.invoke(
+            {"world_height": DEFAULT_WORLD_HEIGHT, "world_width": DEFAULT_WORLD_WIDTH}
+        )
         return parsed_regions

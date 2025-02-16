@@ -3,18 +3,21 @@ from langchain_core.embeddings import Embeddings
 from story_master.settings import Settings
 from story_master.entities.handlers.storage_handler import StorageHandler
 from story_master.entities.sim import Sim
-from story_master.entities.memory import ObjectMemory, Observation, Reflection
+from story_master.entities.memory import Observation
 import numpy as np
-from datetime import timedelta
 import math
 
-class MemoryHandler:
 
-    def __init__(self, settings: Settings, embeddings_client: Embeddings, storage_handler: StorageHandler):
+class MemoryHandler:
+    def __init__(
+        self,
+        settings: Settings,
+        embeddings_client: Embeddings,
+        storage_handler: StorageHandler,
+    ):
         self.settings = settings
         self.embeddings_client = embeddings_client
         self.storage_handler = storage_handler
-
 
     def add_observation(
         self, title: str, content: str, importance: int, sim: Sim
@@ -34,7 +37,9 @@ class MemoryHandler:
         )
         sim.memory.personal_memories.append(memory)
 
-    def get_memories(self, query: str, sim: Sim, max_similar_memories: int = 5) -> list[Observation]:
+    def get_memories(
+        self, query: str, sim: Sim, max_similar_memories: int = 5
+    ) -> list[Observation]:
         query_embeddings = self.embeddings_client.embed_query(query)
         query_embeddings = np.array(query_embeddings).reshape(1, -1)
         current_time = self.storage_handler.game_storage.current_time
@@ -51,7 +56,4 @@ class MemoryHandler:
             )
             scored_memories.append((memory, score))
         scored_memories.sort(key=lambda x: x[1], reverse=True)
-        return [
-            memory
-            for memory, _ in scored_memories[: max_similar_memories]
-        ]
+        return [memory for memory, _ in scored_memories[:max_similar_memories]]
