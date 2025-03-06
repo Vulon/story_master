@@ -39,7 +39,12 @@ class ActionHandler:
             event_handler,
         )
         providers_list = create_provider_list(
-            llm_model, summary_handler, storage_handler
+            llm_model,
+            summary_handler,
+            storage_handler,
+            observation_handler,
+            memory_handler,
+            event_handler,
         )
         self.context_manager = ContextManager(providers_list)
 

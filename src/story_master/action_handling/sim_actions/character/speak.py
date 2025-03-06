@@ -47,7 +47,7 @@ class SpeakAction(Action):
         target_character_id: int | None = None,
         **kwargs,
     ):
-        actor = self.storage_handler.character_storage.get_character(actor_character_id)
+        actor = self.storage_handler.get_sim(actor_character_id)
         target = None
         if target_character_id is not None:
             target = SimReference(sim_id=target_character_id)

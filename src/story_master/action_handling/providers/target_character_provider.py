@@ -27,7 +27,7 @@ class TargetCharacterProvider(Provider):
     1. Analyze the list of characters
     2. Analyze the intention and the details of the action.
     3. Find the character that the action should target. 
-        Output the character's ID. 
+        Output the character's ID - a single integer.
         
     -Intention-
     {intention}
@@ -90,7 +90,8 @@ class TargetCharacterProvider(Provider):
     def parse_output(self, raw_output: str) -> int:
         try:
             raw_output = raw_output.replace("\n", " ").strip()
-            character_id = int(self.output_pattern.search(raw_output).group(1))
+            raw_id = self.output_pattern.search(raw_output).group(1)
+            character_id = int(re.search(r"\d+", raw_id).group(0))
             return character_id
         except Exception:
             logger.error(f"Failed to parse output: {raw_output}")

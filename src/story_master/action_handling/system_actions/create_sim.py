@@ -19,7 +19,7 @@ from story_master.generators.character_generation.description_generator import (
     CharacterDescriptionGenerator,
 )
 from story_master.entities.sim import Sim
-from story_master.entities.event import Event, SimReference
+from story_master.entities.event import Event, SimReference, EventType
 
 DEFAULT_REGION = 0
 
@@ -75,6 +75,7 @@ class SpawnSimAction(Action):
         logger.info(f"Created new character: {character}")
         self.storage_handler.character_storage.npc_characters[sim_id] = sim
         event = Event(
+            type=EventType.SIM_SPAWN,
             description="A new settler has arrived in this region.",
             source=SimReference(sim_id=sim_id),
             position=position,

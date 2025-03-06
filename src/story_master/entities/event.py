@@ -13,6 +13,7 @@ class ReferenceType(StrEnum):
 
 class EventType(StrEnum):
     SPEECH = "speech"
+    SIM_SPAWN = "sim_spawn"
 
 
 class Reference(BaseModel):

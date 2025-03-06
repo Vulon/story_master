@@ -137,7 +137,16 @@ class CharacterGenerator:
         )
 
     def generate(self, character_description: str) -> Character:
-        base_character_info = self._create_base_character_info(character_description)
+        for i in range(3):
+            try:
+                base_character_info = self._create_base_character_info(
+                    character_description
+                )
+                break
+            except Exception as e:
+                logger.error(f"Failed to generate character info. Error: {e}")
+                if i == 2:
+                    raise e
 
         character = Settler(
             name=base_character_info.name,

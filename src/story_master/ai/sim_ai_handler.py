@@ -62,7 +62,7 @@ class SimAiHandler:
 
     def _handle_speech_event(self, sim: Sim, event: Event) -> str:
         source_sim = self.storage_handler.get_sim(event.source.sim_id)
-        if source_sim == sim.id:
+        if source_sim.id == sim.id:
             description = f'I said: "{event.description}".'
         else:
             source_name = self.memory_handler.get_sim_name(sim, source_sim)
@@ -95,11 +95,27 @@ class SimAiHandler:
         self.observation_handler.run(sim, description)
         return description
 
+    def _handle_spawn_event(self, sim: Sim, event: Event) -> str:
+        source_sim = self.storage_handler.get_sim(event.source.sim_id)
+        if source_sim.id == sim.id:
+            description = "I arrived in this region."
+        else:
+            source_name = self.memory_handler.get_sim_name(sim, source_sim)
+            if not source_name:
+                source_name = self.memory_handler.get_sim_description(sim, source_sim)
+            description = f'{source_name} arrived in this region".'
+            self.memory_handler.update_relationship(sim, source_sim, description)
+
+        self.observation_handler.run(sim, description)
+        return description
+
     def handle_events(self, sim: Sim) -> list[str]:
         event_descriptions = []
         for event in sim.events:
             if event.type == EventType.SPEECH:
                 event_descriptions.append(self._handle_speech_event(sim, event))
+            elif event.type == EventType.SIM_SPAWN:
+                event_descriptions.append(self._handle_spawn_event(sim, event))
             else:
                 raise NotImplementedError()
         return event_descriptions
@@ -107,7 +123,7 @@ class SimAiHandler:
     def handle(self, sim_id: int):
         actor = self.storage_handler.get_sim(sim_id)
         event_descriptions = self.handle_events(actor)
-        plan = ""
+        plan = "I want to talk to another person that just arrived with me here. I want to know, what they intent to do here."
         action_type = self.ai_router.route(plan)
         self.action_handler.handle_sim_action(
             action_type,

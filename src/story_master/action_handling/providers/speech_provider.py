@@ -16,7 +16,7 @@ from story_master.log import logger
 DEFAULT_SEARCH_RADIUS = 10
 
 
-class TargetCharacterProvider(Provider):
+class SpeechProvider(Provider):
     PROMPT = """
     You are an agent for the simulation game
 
