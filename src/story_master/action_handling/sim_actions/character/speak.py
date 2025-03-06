@@ -77,7 +77,7 @@ class SpeakAction(Action):
                 name="actor_character_id",
             ),
             "target_character_id": Parameter(
-                description="The ID of the character who is being spoken to",
+                description="The character who is being spoken to",
                 name="target_character_id",
                 required=False,
             ),

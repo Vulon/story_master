@@ -3,7 +3,7 @@ from langchain_core.embeddings import Embeddings
 from story_master.settings import Settings
 from story_master.entities.handlers.storage_handler import StorageHandler
 from story_master.entities.sim import Sim
-from story_master.entities.memory import Observation
+from story_master.entities.memory import Observation, Relationship
 import numpy as np
 import math
 
@@ -57,3 +57,26 @@ class MemoryHandler:
             scored_memories.append((memory, score))
         scored_memories.sort(key=lambda x: x[1], reverse=True)
         return [memory for memory, _ in scored_memories[:max_similar_memories]]
+
+    def get_sim_name(self, actor: Sim, target: Sim) -> str:
+        if target.id in actor.memory.relationships:
+            relationship = actor.memory.relationships[target.id]
+            return relationship.name
+        return ""
+
+    def get_sim_description(self, actor: Sim, target: Sim) -> str:
+        if target.id in actor.memory.relationships:
+            relationship = actor.memory.relationships[target.id]
+            return relationship.text
+        return target.character.get_external_description()
+
+    def update_relationship(self, actor: Sim, target: Sim, text: str):
+        if target.id in actor.memory.relationships:
+            actor.memory.relationships[target.id].text += text
+        else:
+            relationship = Relationship(
+                character_id=target.id,
+                name=target.character.get_external_description(),
+                text=text,
+            )
+            actor.memory.relationships[target.id] = relationship

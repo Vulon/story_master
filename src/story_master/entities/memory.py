@@ -37,8 +37,8 @@ class ObjectMemory(BaseModel):
 
 
 class Relationship(BaseModel):
-    name: str
     character_id: int
+    name: str
     text: str
 
 
@@ -51,5 +51,5 @@ class Memory(BaseModel):
     plan: str = ""
     personal_memories: list[Observation | Reflection] = []
     object_memories: list[ObjectMemory] = []
-    relationships: list[Relationship] = []
+    relationships: dict[int, Relationship] = dict()
     location_memories: list[LocationMemory] = []

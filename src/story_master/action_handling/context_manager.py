@@ -1,6 +1,6 @@
 from typing import Iterable
 
-from story_master.action_handling.parameter import FilledParameter
+from story_master.action_handling.parameter import FilledParameter, Parameter
 from story_master.action_handling.providers.provider import Provider
 from story_master.log import logger
 
@@ -24,34 +24,42 @@ class ContextManager:
     def is_parameter_filled(self, parameter_name: str) -> bool:
         return parameter_name in self.data
 
-    def resolve_providers(self, parameter_names: Iterable[str]) -> None:
-        missing_parameters = set(parameter_names) - set(self.data.keys())
+    def resolve_providers(self, required_parameters: Iterable[Parameter]) -> None:
+        missing_parameters = {
+            parameter.name: parameter
+            for parameter in required_parameters
+            if parameter.name not in self.data
+        }
         providers_queue = []
         current_queue_list = []
         while len(missing_parameters) > 0:
-            new_missing_parameters = set()
-            for parameter_name in missing_parameters:
+            new_missing_parameters = dict()
+            for parameter_name, parameter in missing_parameters.items():
                 provider = self.table[parameter_name]
                 input_parameters = provider.get_input_parameters()
-                new_missing_parameters.update(
-                    set(input_parameters.keys()) - set(self.data.keys())
-                )
-                current_queue_list.append(provider)
-            missing_parameters = new_missing_parameters
+                new_missing_parameters.update(input_parameters)
+                current_queue_list.append((provider, parameter))
+            missing_parameters = {
+                parameter_name: parameter
+                for parameter_name, parameter in new_missing_parameters.items()
+                if parameter_name not in self.data
+            }
             providers_queue.append(current_queue_list)
             current_queue_list = []
 
         for providers_list in reversed(providers_queue):
-            for provider in providers_list:
+            for provider, input_parameter in providers_list:
                 filled_input_parameters = {
                     parameter_name: parameter_value.value
                     for parameter_name, parameter_value in self.data.items()
                 }
                 logger.info(f"Executing provider {provider.get_description()}")
-                output_parameters = provider.execute(**filled_input_parameters)
+                output_parameters = provider.execute(
+                    input_parameter, **filled_input_parameters
+                )
                 for parameter in output_parameters.values():
                     self.add(parameter)
 
-    def get(self, parameter_name: str) -> FilledParameter:
-        self.resolve_providers([parameter_name])
-        return self.data[parameter_name]
+    def get(self, parameter: Parameter) -> FilledParameter:
+        self.resolve_providers([parameter])
+        return self.data[parameter.name]

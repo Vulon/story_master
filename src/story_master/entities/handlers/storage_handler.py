@@ -2,16 +2,15 @@ from story_master.settings import Settings
 from pydantic import BaseModel
 import json
 from story_master.entities.sim import Sim
-from story_master.entities.location import Map, BaseLocation
+from story_master.entities.location import Map, BaseLocation, Position
 from datetime import datetime
 
 
 class CharacterStorage(BaseModel):
-    player_characters: dict[int, Sim] = {}
     npc_characters: dict[int, Sim] = {}
 
     def get_new_id(self) -> int:
-        all_ids = set(self.player_characters.keys()) | set(self.npc_characters.keys())
+        all_ids = set(self.npc_characters.keys())
         if len(all_ids) == 0:
             return 0
         return max(all_ids) + 1
@@ -56,11 +55,16 @@ class StorageHandler:
         return self.map.locations[location_id]
 
     def get_sim(self, character_id: int) -> Sim | None:
-        if character_id in self.character_storage.player_characters:
-            return self.character_storage.player_characters[character_id]
         if character_id in self.character_storage.npc_characters:
             return self.character_storage.npc_characters[character_id]
         return None
+
+    def get_sims(self, position: Position, radius: int) -> list[Sim]:
+        return [
+            sim
+            for sim in self.character_storage.npc_characters.values()
+            if sim.position.is_close(position, radius)
+        ]
 
     def save_map(self):
         json_text = self.map.model_dump_json(indent=2)
@@ -77,7 +81,4 @@ class StorageHandler:
     def get_existing_names(self) -> set[str]:
         return {
             sim.character.name for sim in self.character_storage.npc_characters.values()
-        } | {
-            sim.character.name
-            for sim in self.character_storage.player_characters.values()
         }

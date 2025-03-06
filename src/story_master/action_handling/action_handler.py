@@ -52,7 +52,7 @@ class ActionHandler:
             self.context_manager.add(parameter)
 
         filled_parameters = {
-            parameter_name: self.context_manager.get(parameter_name).value
+            parameter_name: self.context_manager.get(parameter).value
             for parameter_name, parameter in action.get_parameters().items()
             if parameter.required
             or (
@@ -70,7 +70,7 @@ class ActionHandler:
         self.context_manager.clear()
 
         filled_parameters = {
-            parameter_name: self.context_manager.get(parameter_name).value
-            for parameter_name in action.get_parameters().keys()
+            parameter_name: self.context_manager.get(parameter).value
+            for parameter_name, parameter in action.get_parameters().items()
         }
         action.execute(**filled_parameters)
