@@ -1,6 +1,7 @@
 from langchain_core.language_models.chat_models import BaseChatModel
 
 from story_master.action_handling.parameter import FilledParameter
+from story_master.ai.plan_generator import PlanGenerator
 from story_master.entities.event import EventType, Event, SimReference
 from story_master.entities.handlers.event_handler import EventHandler
 from story_master.entities.handlers.memory_handler import MemoryHandler
@@ -59,6 +60,14 @@ class SimAiHandler:
             memory_handler,
             event_handler,
         )
+        self.plan_generator = PlanGenerator(
+            llm_model,
+            summary_handler,
+            storage_handler,
+            observation_handler,
+            memory_handler,
+            event_handler,
+        )
 
     def _handle_speech_event(self, sim: Sim, event: Event) -> str:
         source_sim = self.storage_handler.get_sim(event.source.sim_id)
@@ -103,10 +112,26 @@ class SimAiHandler:
             source_name = self.memory_handler.get_sim_name(sim, source_sim)
             if not source_name:
                 source_name = self.memory_handler.get_sim_description(sim, source_sim)
-            description = f'{source_name} arrived in this region".'
+            description = f'I notice, that a new settler arrived. Here is what I know about them: {source_name}".'
             self.memory_handler.update_relationship(sim, source_sim, description)
 
-        self.observation_handler.run(sim, description)
+        location = self.storage_handler.get_location(source_sim.position.location_id)
+        location_description = location.get_description()
+
+        self.observation_handler.run(
+            sim, description, location_description=location_description
+        )
+        return description
+
+    def _handle_observation_event(self, sim: Sim, event: Event) -> str:
+        description = event.description
+        location = self.storage_handler.get_location(event.position.location_id)
+        location_description = (
+            f"{location.name}. Position: x:{event.position.x}, y:{event.position.y}."
+        )
+        self.observation_handler.run(
+            sim, description, location_description=location_description
+        )
         return description
 
     def handle_events(self, sim: Sim) -> list[str]:
@@ -123,7 +148,10 @@ class SimAiHandler:
     def handle(self, sim_id: int):
         actor = self.storage_handler.get_sim(sim_id)
         event_descriptions = self.handle_events(actor)
-        plan = "I want to talk to another person that just arrived with me here. I want to know, what they intent to do here."
+        logger.info(f"Recent events: {event_descriptions}")
+        plan = self.plan_generator.generate(event_descriptions, actor.memory.plan)
+        logger.info(f"Generated plan: {plan}")
+        actor.memory.plan = plan
         action_type = self.ai_router.route(plan)
         self.action_handler.handle_sim_action(
             action_type,

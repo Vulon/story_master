@@ -31,10 +31,12 @@ class Action(ABC):
     def execute(self, **kwargs):
         pass
 
+    @staticmethod
     @abstractmethod
-    def get_description(self) -> str:
+    def get_description() -> str:
         pass
 
+    @staticmethod
     @abstractmethod
-    def get_parameters(self) -> dict[str, Parameter]:
+    def get_parameters() -> dict[str, Parameter]:
         pass

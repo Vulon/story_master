@@ -63,7 +63,7 @@ class SpeechProvider(Provider):
         )
         prompt = PromptTemplate.from_template(self.PROMPT)
         self.chain = prompt | self.llm_model | StrOutputParser() | self.parse_output
-        self.output_pattern = re.compile(r"<Speech>(.*?)</Speech>")
+        self.output_pattern = re.compile(r"<.?Speech.?>(.*?)</.?Speech.?>")
 
     def get_description(self) -> str:
         return "Generate a speech for a character"

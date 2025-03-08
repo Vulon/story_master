@@ -1,5 +1,7 @@
 from langchain_community.utils.math import cosine_similarity
 from langchain_core.embeddings import Embeddings
+
+from story_master.entities.location import Object
 from story_master.settings import Settings
 from story_master.entities.handlers.storage_handler import StorageHandler
 from story_master.entities.sim import Sim
@@ -69,6 +71,12 @@ class MemoryHandler:
             relationship = actor.memory.relationships[target.id]
             return relationship.text
         return target.character.get_external_description()
+
+    def get_object_description(self, actor: Sim, target: Object) -> str:
+        for memory in actor.memory.object_memories:
+            if memory.position == target.position:
+                return memory.memory
+        return target.get_description()
 
     def update_relationship(self, actor: Sim, target: Sim, text: str):
         if target.id in actor.memory.relationships:

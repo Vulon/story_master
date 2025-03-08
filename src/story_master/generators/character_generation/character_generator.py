@@ -43,8 +43,9 @@ class CharacterParameterGenerator:
     4. Generate character name.
         Use the character description to generate a name.
     5. Generate a character appearance. 
-        Write how the character looks like.
+        Write, how other characters see this character.
         You can be creative and add any details you want.        
+        But only mention things, that other's can see without knowing the character personally.
     6. Output the generated parameters in XML format, one per line.
 
     -Character description-

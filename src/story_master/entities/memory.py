@@ -4,6 +4,8 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+from story_master.entities.location import Position
+
 
 class PersonalMemoryType(StrEnum):
     OBSERVATION = "observation"
@@ -30,9 +32,7 @@ class Reflection(AbstractPersonalMemory):
 
 
 class ObjectMemory(BaseModel):
-    location_id: int
-    x: int
-    y: int
+    position: Position
     memory: str
 
 

@@ -7,12 +7,21 @@ from story_master.entities.handlers.observation_handler import ObservationHandle
 from story_master.entities.handlers.storage_handler import StorageHandler
 from story_master.entities.handlers.summary_handler import SummaryHandler
 from langchain_core.language_models.chat_models import BaseChatModel
+from story_master.action_handling.sim_actions.environment.observe import ObserveAction
 from enum import StrEnum
 
 
 class ActionType(StrEnum):
     SPAWN_SIM = "spawn_sim"
     SPEAK = "speak"
+    OBSERVE = "observe"
+
+
+ACTION_CLASS_TABLE = {
+    ActionType.SPAWN_SIM: SpawnSimAction,
+    ActionType.SPEAK: SpeakAction,
+    ActionType.OBSERVE: ObserveAction,
+}
 
 
 def create_action_table(
@@ -24,20 +33,13 @@ def create_action_table(
     event_handler: EventHandler,
 ) -> dict[ActionType, Action]:
     return {
-        ActionType.SPAWN_SIM: SpawnSimAction(
+        action_type: action_class(
             llm_model,
             summary_handler,
             storage_handler,
             observation_handler,
             memory_handler,
             event_handler,
-        ),
-        ActionType.SPEAK: SpeakAction(
-            llm_model,
-            summary_handler,
-            storage_handler,
-            observation_handler,
-            memory_handler,
-            event_handler,
-        ),
+        )
+        for action_type, action_class in ACTION_CLASS_TABLE.items()
     }

@@ -1,3 +1,5 @@
+import json
+
 from langchain_core.language_models.chat_models import BaseChatModel
 from langchain.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
@@ -10,9 +12,14 @@ from story_master.entities.handlers.summary_handler import SummaryHandler
 from story_master.action_handling.sim_actions.action_factory import ActionType
 import re
 from difflib import get_close_matches
+from story_master.action_handling.sim_actions.action_factory import ACTION_CLASS_TABLE
 
-
-SIM_ACTIONS = [ActionType.SPEAK]
+SIM_ACTIONS = [ActionType.SPEAK, ActionType.OBSERVE]
+ACTION_DESCRIPTIONS = {
+    action_type: ACTION_CLASS_TABLE[action_type].get_description()
+    for action_type in SIM_ACTIONS
+}
+ACTION_NAMES = [str(action) for action in SIM_ACTIONS]
 
 
 class SimAiRouter:
@@ -27,6 +34,7 @@ class SimAiRouter:
     2. Analyze the list of actions available.
     3. Pick the right action.
         Choose the action that is most suitable for the character's plan.
+        If there are several actions in the plan, pick the first one.
         Write the name of the action directly.
     4. Output the action name in XML format
     
@@ -62,20 +70,18 @@ class SimAiRouter:
         self.chain = prompt | llm_model | StrOutputParser() | self.parse_output
         self.output_pattern = re.compile(r"<Action>(.*?)</Action>")
 
-        self.action_names = [str(action) for action in SIM_ACTIONS]
-
     def parse_output(self, output: str) -> ActionType:
         try:
             output = output.replace("\n", " ").strip()
             match = self.output_pattern.search(output)
             raw_action_name = match.group(1)
-            action_name = get_close_matches(raw_action_name, self.action_names)[0]
+            action_name = get_close_matches(raw_action_name, ACTION_NAMES)[0]
             return ActionType(action_name)
         except Exception as e:
             logger.error(f"SimAiRouter. Failed to parse output: {output}")
             raise e
 
     def route(self, plan: str) -> ActionType:
-        actions = "\n".join(self.action_names)
+        actions = json.dumps(ACTION_DESCRIPTIONS)
         action = self.chain.invoke({"plan": plan, "actions": actions})
         return action

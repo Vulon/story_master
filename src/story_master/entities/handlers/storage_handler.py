@@ -2,7 +2,7 @@ from story_master.settings import Settings
 from pydantic import BaseModel
 import json
 from story_master.entities.sim import Sim
-from story_master.entities.location import Map, BaseLocation, Position
+from story_master.entities.location import Map, Position, Object, ANY_LOCATION
 from datetime import datetime
 
 
@@ -51,7 +51,7 @@ class StorageHandler:
                 current_time=self.settings.default_starting_time
             )
 
-    def get_location(self, location_id: int) -> BaseLocation:
+    def get_location(self, location_id: int) -> ANY_LOCATION:
         return self.map.locations[location_id]
 
     def get_sim(self, character_id: int) -> Sim | None:
@@ -65,6 +65,15 @@ class StorageHandler:
             for sim in self.character_storage.npc_characters.values()
             if sim.position.is_close(position, radius)
         ]
+
+    def get_objects(self, position: Position, radius: int) -> list[Object]:
+        objects = []
+        location_id = position.location_id
+        location = self.get_location(location_id)
+        for obj in location.objects.values():
+            if position.is_close(obj.position, radius):
+                objects.append(obj)
+        return objects
 
     def save_map(self):
         json_text = self.map.model_dump_json(indent=2)

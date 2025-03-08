@@ -84,8 +84,10 @@ class SpawnSimAction(Action):
         )
         self.event_handler.broadcast_event(event)
 
-    def get_description(self) -> str:
+    @staticmethod
+    def get_description() -> str:
         return "Create a new character in the simulation"
 
-    def get_parameters(self) -> dict[str, Parameter]:
+    @staticmethod
+    def get_parameters() -> dict[str, Parameter]:
         return {}
