@@ -35,7 +35,7 @@ class SummaryHandler:
 
     def __init__(self, llm_model: BaseChatModel):
         self.prompt = PromptTemplate.from_template(self.PROMPT)
-        self.pattern = re.compile(r"<Summary>(.*?)</Summary>")
+        self.pattern = re.compile(r"<\s*Summary\s*>(.*?)</\s*Summary\s*>")
         self.chain = self.prompt | llm_model | StrOutputParser() | self.parse_output
 
     def parse_output(self, output: str):

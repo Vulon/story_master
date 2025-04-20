@@ -1,9 +1,0 @@
-langchain
-langgraph
-langchain-ollama
-langchain-community
-
-pydantic
-pydantic-settings
-
-httpx

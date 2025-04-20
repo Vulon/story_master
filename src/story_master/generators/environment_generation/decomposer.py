@@ -49,11 +49,13 @@ class MapDecomposer:
 
     def __init__(self, llm_model: BaseChatModel):
         self.llm_model = llm_model
-        self.name_pattern = re.compile(r"<Name>(.*?)</Name>")
-        self.description_pattern = re.compile(r"<Description>(.*?)</Description>")
+        self.name_pattern = re.compile(r"<\s*Name\s*>(.*?)</\s*Name\s*>")
+        self.description_pattern = re.compile(
+            r"<\s*Description\s*>(.*?)</\s*Description\s*>"
+        )
         self.x_pattern = re.compile(r"<X>(.*?)</X>")
         self.y_pattern = re.compile(r"<Y>(.*?)</Y>")
-        self.region_pattern = re.compile(r"<Region>(.*?)</Region>")
+        self.region_pattern = re.compile(r"<\s*Region\s*>(.*?)</\s*Region\s*>")
 
         prompt = PromptTemplate.from_template(self.PROMPT)
         self.chain = prompt | llm_model | StrOutputParser() | self.parse_output

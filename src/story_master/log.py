@@ -48,5 +48,4 @@ def configure_logger() -> logging.Logger:
     return logger
 
 
-# https://blog.det.life/send-python-logs-asynchronously-to-logstash-for-real-time-insights-51de5c27c325
 logger = configure_logger()

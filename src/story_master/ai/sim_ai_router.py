@@ -6,7 +6,6 @@ from langchain_core.output_parsers import StrOutputParser
 from story_master.log import logger
 from story_master.entities.handlers.event_handler import EventHandler
 from story_master.entities.handlers.memory_handler import MemoryHandler
-from story_master.entities.handlers.observation_handler import ObservationHandler
 from story_master.entities.handlers.storage_handler import StorageHandler
 from story_master.entities.handlers.summary_handler import SummaryHandler
 from story_master.action_handling.sim_actions.action_factory import ActionType
@@ -14,7 +13,10 @@ import re
 from difflib import get_close_matches
 from story_master.action_handling.sim_actions.action_factory import ACTION_CLASS_TABLE
 
-SIM_ACTIONS = [ActionType.SPEAK, ActionType.OBSERVE]
+SIM_ACTIONS = [
+    ActionType.SPEAK,
+    # ActionType.OBSERVE
+]
 ACTION_DESCRIPTIONS = {
     action_type: ACTION_CLASS_TABLE[action_type].get_description()
     for action_type in SIM_ACTIONS
@@ -55,20 +57,18 @@ class SimAiRouter:
         llm_model: BaseChatModel,
         summary_handler: SummaryHandler,
         storage_handler: StorageHandler,
-        observation_handler: ObservationHandler,
         memory_handler: MemoryHandler,
         event_handler: EventHandler,
     ):
         self.llm_model = llm_model
         self.summary_handler = summary_handler
         self.storage_handler = storage_handler
-        self.observation_handler = observation_handler
         self.memory_handler = memory_handler
         self.event_handler = event_handler
 
         prompt = PromptTemplate.from_template(self.PROMPT)
         self.chain = prompt | llm_model | StrOutputParser() | self.parse_output
-        self.output_pattern = re.compile(r"<Action>(.*?)</Action>")
+        self.output_pattern = re.compile(r"<\s*Action\s*>(.*?)</\s*Action\s*>")
 
     def parse_output(self, output: str) -> ActionType:
         try:

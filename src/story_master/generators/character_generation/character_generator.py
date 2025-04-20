@@ -63,10 +63,12 @@ class CharacterParameterGenerator:
     def __init__(self, llm_model: BaseChatModel):
         self.llm_model = llm_model
         prompt = PromptTemplate.from_template(self.PROMPT)
-        self.gender_pattern = re.compile(r"<Gender>(.*?)</Gender>")
-        self.age_pattern = re.compile(r"<Age>(.*?)</Age>")
-        self.name_pattern = re.compile(r"<Name>(.*?)</Name>")
-        self.apperance_pattern = re.compile(r"<Appearance>(.*?)</Appearance>")
+        self.gender_pattern = re.compile(r"<\s*Gender\s*>(.*?)</\s*Gender\s*>")
+        self.age_pattern = re.compile(r"<\s*Age\s*>(.*?)</\s*Age\s*>")
+        self.name_pattern = re.compile(r"<\s*Name\s*>(.*?)</\s*Name\s*>")
+        self.apperance_pattern = re.compile(
+            r"<\s*Appearance\s*>(.*?)</\s*Appearance\s*>"
+        )
         self.chain = prompt | llm_model | StrOutputParser() | self.parse_output
 
     def parse_output(self, output: str):
@@ -126,8 +128,6 @@ class CharacterGenerator:
             character_description
         )
         character_description += f" Sex: {gender}, Age: {age}. Name: {name} "
-
-        existing_names = self.storage_handler.get_existing_names()
 
         return BaseCharacterInfo(
             gender=gender,

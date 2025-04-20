@@ -44,7 +44,7 @@ class ObjectNameGenerator:
 
     def __init__(self, llm_model: BaseChatModel):
         self.llm_model = llm_model
-        self.object_pattern = re.compile(r"<Object>(.*?)</Object>")
+        self.object_pattern = re.compile(r"<\s*Object\s*>(.*?)</\s*Object\s*>")
 
         prompt = PromptTemplate.from_template(self.PROMPT)
         self.chain = prompt | llm_model | StrOutputParser() | self.parse_output
@@ -112,15 +112,17 @@ class ObjectGenerator:
 
     def __init__(self, llm_model: BaseChatModel):
         self.llm_model = llm_model
-        self.object_pattern = re.compile(r"<Object>(.*?)</Object>")
+        self.object_pattern = re.compile(r"<\s*Object\s*>(.*?)</\s*Object\s*>")
 
-        self.name_pattern = re.compile(r"<Name>(.*?)</Name>")
-        self.description_pattern = re.compile(r"<Description>(.*?)</Description>")
-        self.hidden_description_pattern = re.compile(
-            r"<HiddenDescription>(.*?)</HiddenDescription>"
+        self.name_pattern = re.compile(r"<\s*Name\s*>(.*?)</\s*Name\s*>")
+        self.description_pattern = re.compile(
+            r"<\s*Description\s*>(.*?)</\s*Description\s*>"
         )
-        self.width_pattern = re.compile(r"<Width>(.*?)</Width>")
-        self.height_pattern = re.compile(r"<Height>(.*?)</Height>")
+        self.hidden_description_pattern = re.compile(
+            r"<\s*HiddenDescription\s*>(.*?)</\s*HiddenDescription\s*>"
+        )
+        self.width_pattern = re.compile(r"<\s*Width\s*>(.*?)</\s*Width\s*>")
+        self.height_pattern = re.compile(r"<\s*Height\s*>(.*?)</\s*Height\s*>")
 
         prompt = PromptTemplate.from_template(self.PROMPT)
         self.chain = prompt | llm_model | StrOutputParser() | self.parse_output
@@ -215,7 +217,7 @@ class ObjectPlacer:
 
     def __init__(self, llm_model: BaseChatModel):
         self.llm_model = llm_model
-        self.object_pattern = re.compile(r"<Object>(.*?)</Object>")
+        self.object_pattern = re.compile(r"<\s*Object\s*>(.*?)</\s*Object\s*>")
 
         self.id_pattern = re.compile(r"<Id>(.*?)</Id>")
         self.x_pattern = re.compile(r"<X>(.*?)</X>")

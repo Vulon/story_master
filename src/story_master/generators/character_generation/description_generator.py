@@ -36,7 +36,7 @@ class CharacterDescriptionGenerator:
     def __init__(self, llm_model: BaseChatModel):
         self.llm_model = llm_model
         prompt = PromptTemplate.from_template(self.PROMPT)
-        self.output_pattern = re.compile(r"<Output>(.*?)</Output>")
+        self.output_pattern = re.compile(r"<\s*Output\s*>(.*?)</\s*Output\s*>")
         self.chain = prompt | llm_model | StrOutputParser() | self.parse_output
 
     def parse_output(self, output: str) -> str:

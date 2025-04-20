@@ -8,7 +8,6 @@ from story_master.action_handling.parameter import Parameter, FilledParameter
 from story_master.action_handling.providers.provider import Provider
 from story_master.entities.handlers.event_handler import EventHandler
 from story_master.entities.handlers.memory_handler import MemoryHandler
-from story_master.entities.handlers.observation_handler import ObservationHandler
 from story_master.entities.handlers.storage_handler import StorageHandler
 from story_master.entities.handlers.summary_handler import SummaryHandler
 from story_master.log import logger
@@ -48,7 +47,6 @@ class TargetCharacterProvider(Provider):
         llm_model: BaseChatModel,
         summary_handler: SummaryHandler,
         storage_handler: StorageHandler,
-        observation_handler: ObservationHandler,
         memory_handler: MemoryHandler,
         event_handler: EventHandler,
     ):
@@ -56,13 +54,12 @@ class TargetCharacterProvider(Provider):
             llm_model,
             summary_handler,
             storage_handler,
-            observation_handler,
             memory_handler,
             event_handler,
         )
         prompt = PromptTemplate.from_template(self.PROMPT)
         self.chain = prompt | self.llm_model | StrOutputParser() | self.parse_output
-        self.output_pattern = re.compile(r"<Character>(.*?)</Character>")
+        self.output_pattern = re.compile(r"<\s*Character\s*>(.*?)</\s*Character\s*>")
 
     def get_description(self) -> str:
         return "Finds a target character for the action"

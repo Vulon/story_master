@@ -6,7 +6,6 @@ from story_master.action_handling.action_handler import ActionHandler
 from story_master.entities.handlers.storage_handler import StorageHandler
 from story_master.entities.handlers.summary_handler import SummaryHandler
 from story_master.entities.handlers.memory_handler import MemoryHandler
-from story_master.entities.handlers.observation_handler import ObservationHandler
 from story_master.generators.environment_generation.map_creator import MapCreator
 from story_master.ai.sim_ai_handler import SimAiHandler
 
@@ -20,11 +19,7 @@ class Engine:
         self.storage_handler = StorageHandler(self.settings)
         self.summary_handler = SummaryHandler(self.client)
         self.memory_handler = MemoryHandler(
-            self.client, embeddings_client, self.storage_handler
-        )
-        self.observation_handler = ObservationHandler(
-            self.client,
-            self.memory_handler,
+            embeddings_client, self.settings.storage, self.storage_handler
         )
         self.event_handler = EventHandler(self.storage_handler)
 
@@ -32,7 +27,6 @@ class Engine:
             self.client,
             self.summary_handler,
             self.storage_handler,
-            self.observation_handler,
             self.memory_handler,
             self.event_handler,
         )
@@ -44,7 +38,6 @@ class Engine:
             self.client,
             self.summary_handler,
             self.storage_handler,
-            self.observation_handler,
             self.memory_handler,
             self.event_handler,
         )
@@ -57,4 +50,14 @@ class Engine:
         # self.map_creator.generate_area(center, 7)
         # self.storage_handler.save_map()
 
-        self.sim_ai_handler.handle(0)
+        # self.action_handler.handle_system_action(ActionType.SPAWN_SIM)
+        # self.action_handler.handle_system_action(ActionType.SPAWN_SIM)
+        # self.storage_handler.save_characters()
+
+        # for i in range(2):
+        #     logger.info(f"Itteration {i}")
+        #     for sim_id in self.storage_handler.character_storage.npc_characters.keys():
+        #         logger.info(f"Processing sim {sim_id}")
+        #         self.sim_ai_handler.handle(sim_id)
+        #         print("\n" * 5)
+        pass

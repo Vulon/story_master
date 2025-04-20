@@ -5,7 +5,6 @@ from story_master.ai.plan_generator import PlanGenerator
 from story_master.entities.event import EventType, Event, SimReference
 from story_master.entities.handlers.event_handler import EventHandler
 from story_master.entities.handlers.memory_handler import MemoryHandler
-from story_master.entities.handlers.observation_handler import ObservationHandler
 from story_master.entities.handlers.storage_handler import StorageHandler
 from story_master.entities.handlers.summary_handler import SummaryHandler
 from story_master.entities.sim import Sim
@@ -33,14 +32,12 @@ class SimAiHandler:
         llm_model: BaseChatModel,
         summary_handler: SummaryHandler,
         storage_handler: StorageHandler,
-        observation_handler: ObservationHandler,
         memory_handler: MemoryHandler,
         event_handler: EventHandler,
     ):
         self.llm_model = llm_model
         self.summary_handler = summary_handler
         self.storage_handler = storage_handler
-        self.observation_handler = observation_handler
         self.memory_handler = memory_handler
         self.event_handler = event_handler
 
@@ -48,7 +45,6 @@ class SimAiHandler:
             llm_model,
             summary_handler,
             storage_handler,
-            observation_handler,
             memory_handler,
             event_handler,
         )
@@ -56,7 +52,6 @@ class SimAiHandler:
             llm_model,
             summary_handler,
             storage_handler,
-            observation_handler,
             memory_handler,
             event_handler,
         )
@@ -64,7 +59,6 @@ class SimAiHandler:
             llm_model,
             summary_handler,
             storage_handler,
-            observation_handler,
             memory_handler,
             event_handler,
         )
@@ -141,6 +135,8 @@ class SimAiHandler:
                 event_descriptions.append(self._handle_speech_event(sim, event))
             elif event.type == EventType.SIM_SPAWN:
                 event_descriptions.append(self._handle_spawn_event(sim, event))
+            elif event.type == EventType.OBSERVATION:
+                event_descriptions.append(self._handle_observation_event(sim, event))
             else:
                 raise NotImplementedError()
         return event_descriptions
@@ -148,11 +144,13 @@ class SimAiHandler:
     def handle(self, sim_id: int):
         actor = self.storage_handler.get_sim(sim_id)
         event_descriptions = self.handle_events(actor)
+
         logger.info(f"Recent events: {event_descriptions}")
         plan = self.plan_generator.generate(event_descriptions, actor.memory.plan)
         logger.info(f"Generated plan: {plan}")
         actor.memory.plan = plan
         action_type = self.ai_router.route(plan)
+        actor.events.clear()
         self.action_handler.handle_sim_action(
             action_type,
             [

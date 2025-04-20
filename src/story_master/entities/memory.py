@@ -1,55 +1,29 @@
 from datetime import datetime
 from enum import StrEnum
-from typing import Literal
 
 from pydantic import BaseModel
 
 from story_master.entities.location import Position
 
 
-class PersonalMemoryType(StrEnum):
-    OBSERVATION = "observation"
-    REFLECTION = "reflection"
+class MemoryTag(StrEnum):
+    RELATIONSHIP = "relationship"
+    LOCATION = "location"
+    INVENTORY = "inventory"
+    PLAN = "plan"
+    OBJECT = "object"
 
 
-class AbstractPersonalMemory(BaseModel):
+class MemoryEntry(BaseModel):
     id: int
-    type: PersonalMemoryType
-    timestamp: datetime
-    title: str
     content: str
+    timestamp: datetime
+    tag: MemoryTag | None = None
     importance: int
-    embeddings: list[float]
-
-
-class Observation(AbstractPersonalMemory):
-    type: Literal[PersonalMemoryType.OBSERVATION] = PersonalMemoryType.OBSERVATION
-
-
-class Reflection(AbstractPersonalMemory):
-    type: Literal[PersonalMemoryType.REFLECTION] = PersonalMemoryType.REFLECTION
-    sources: list[int]
-
-
-class ObjectMemory(BaseModel):
-    position: Position
-    memory: str
-
-
-class Relationship(BaseModel):
-    character_id: int
-    name: str
-    text: str
-
-
-class LocationMemory(BaseModel):
-    location_id: int
-    text: str
+    related_entity_id: int | None = None
+    position: Position | None = None
 
 
 class Memory(BaseModel):
+    entries: list[MemoryEntry] = []
     plan: str = ""
-    personal_memories: list[Observation | Reflection] = []
-    object_memories: list[ObjectMemory] = []
-    relationships: dict[int, Relationship] = dict()
-    location_memories: list[LocationMemory] = []

@@ -4,7 +4,6 @@ from langchain_core.prompts import PromptTemplate
 
 from story_master.entities.handlers.event_handler import EventHandler
 from story_master.entities.handlers.memory_handler import MemoryHandler
-from story_master.entities.handlers.observation_handler import ObservationHandler
 from story_master.entities.handlers.storage_handler import StorageHandler
 from story_master.entities.handlers.summary_handler import SummaryHandler
 from story_master.ai.sim_ai_router import ACTION_DESCRIPTIONS
@@ -25,7 +24,10 @@ class PlanGenerator:
     3. Analyze actions, that can be performed by the character.
         Focus your plan on available actions.
     4. Generate a short plan based on provided actions for the character.
-        It should describe short-term goal, that the character will try to achieve.
+        Write, what the character should do next. 
+        Plan only one action at a time.
+        You can also write what you would want to do next, but keep the text short. 
+        Your whole output should be a single paragraph.
         Write the plan as if the character is thinking about it.
     
     -Events-
@@ -45,14 +47,12 @@ class PlanGenerator:
         llm_model: BaseChatModel,
         summary_handler: SummaryHandler,
         storage_handler: StorageHandler,
-        observation_handler: ObservationHandler,
         memory_handler: MemoryHandler,
         event_handler: EventHandler,
     ):
         self.llm_model = llm_model
         self.summary_handler = summary_handler
         self.storage_handler = storage_handler
-        self.observation_handler = observation_handler
         self.memory_handler = memory_handler
         self.event_handler = event_handler
 

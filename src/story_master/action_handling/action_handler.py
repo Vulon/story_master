@@ -11,7 +11,6 @@ from story_master.action_handling.context_manager import ContextManager
 from story_master.action_handling.providers.provider_factory import create_provider_list
 from story_master.entities.handlers.event_handler import EventHandler
 from story_master.entities.handlers.memory_handler import MemoryHandler
-from story_master.entities.handlers.observation_handler import ObservationHandler
 from story_master.entities.handlers.storage_handler import StorageHandler
 from story_master.entities.handlers.summary_handler import SummaryHandler
 
@@ -22,7 +21,6 @@ class ActionHandler:
         llm_model: BaseChatModel,
         summary_handler: SummaryHandler,
         storage_handler: StorageHandler,
-        observation_handler: ObservationHandler,
         memory_handler: MemoryHandler,
         event_handler: EventHandler,
     ):
@@ -34,7 +32,6 @@ class ActionHandler:
             llm_model,
             summary_handler,
             storage_handler,
-            observation_handler,
             memory_handler,
             event_handler,
         )
@@ -42,7 +39,6 @@ class ActionHandler:
             llm_model,
             summary_handler,
             storage_handler,
-            observation_handler,
             memory_handler,
             event_handler,
         )
