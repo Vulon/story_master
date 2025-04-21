@@ -14,3 +14,7 @@ class speak_action(BaseModel):
         ...,
         description="ID of another character, who is the target for this speak event.",
     )
+
+
+ANY_ACTION_TYPE = speak_action
+ALL_ACTIONS = [speak_action]
