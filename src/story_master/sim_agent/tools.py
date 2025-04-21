@@ -4,6 +4,7 @@ from story_master.entities.handlers.storage_handler import StorageHandler
 
 class get_nearby_characters(BaseModel):
     """
+    Retrieval function.
     Gets a list of all characters nearby.
     Each character is described by their appearance.
     """
