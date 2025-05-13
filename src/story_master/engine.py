@@ -2,12 +2,10 @@ from story_master.entities.handlers.event_handler import EventHandler
 from story_master.llm_client import get_client, get_embeddings_client
 
 from story_master.settings import Settings
-from story_master.action_handling.action_handler import ActionHandler
 from story_master.entities.handlers.storage_handler import StorageHandler
 from story_master.entities.handlers.summary_handler import SummaryHandler
 from story_master.entities.handlers.memory_handler import MemoryHandler
 from story_master.generators.environment_generation.map_creator import MapCreator
-from story_master.ai.sim_ai_handler import SimAiHandler
 
 
 class Engine:
@@ -23,23 +21,8 @@ class Engine:
         )
         self.event_handler = EventHandler(self.storage_handler)
 
-        self.action_handler = ActionHandler(
-            self.client,
-            self.summary_handler,
-            self.storage_handler,
-            self.memory_handler,
-            self.event_handler,
-        )
-
         self.map_creator = MapCreator(
             self.client, self.storage_handler, self.summary_handler
-        )
-        self.sim_ai_handler = SimAiHandler(
-            self.client,
-            self.summary_handler,
-            self.storage_handler,
-            self.memory_handler,
-            self.event_handler,
         )
 
     def run(self):
